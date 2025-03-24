@@ -1,0 +1,139 @@
+<template>
+  <div style="width: 87vw; height: 85vh" class="chart" />
+</template>
+
+<script>
+import * as echarts from 'echarts'
+import resize from '../mixins/resize'
+import { getMonthName } from '@/utils'
+
+export default {
+  mixins: [resize],
+
+  props: {
+    data: {
+      type: Array,
+      default: () => []
+    }
+  },
+
+  data() {
+    return {
+      chart: null,
+      months: []
+    }
+  },
+
+  mounted() {
+    const option = {
+      title: {
+        text: 'По типам'
+      },
+      tooltip: {
+        trigger: 'axis',
+        order: 'valueDesc',
+        axisPointer: {
+          type: 'shadow'
+        }
+        /* formatter: function(params) {
+          let output = '<b>' + params[0].name + '</b><br/>'
+          for (let i = 0; i < params.length; i++) {
+            if (params[i].value) {
+              output += `<div style="float: left; margin-right: 15px">${params[i].marker + params[i].seriesName}:</div><div style="float: right;"><b>${params[i].value}</b></div>`
+              if (i !== params.length - 1) {
+                output += '<br/>'
+              }
+            }
+          }
+          return output
+        } */
+      },
+      legend: {
+        data: this.allUniqLines()
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      toolbox: {
+        feature: {
+          saveAsImage: {}
+        }
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: this.getMonths(this.data)
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: this.createSeries()
+    }
+
+    this.createSeries()
+    this.chart = echarts.init(this.$el)
+    this.chart.setOption(option)
+  },
+
+  beforeDestroy() {
+    if (!this.chart) {
+      return
+    }
+    this.chart.dispose()
+    this.chart = null
+  },
+
+  methods: {
+
+    getMonths(data) {
+      const months = this.months = [...new Set(data.map(i => (JSON.stringify({ m: i.Mon, y: i.Yea }))))].map(i => (JSON.parse(i)))
+      return months.map(i => getMonthName(i.m - 2) + ' ' + i.y)
+    },
+
+    allUniqLines() {
+      return [...new Set(this.data.map(i => i.ArtF))]
+    },
+
+    createLine(art) {
+      return {
+        name: art,
+        type: 'line',
+        smooth: true,
+        lineStyle: {
+          type: 'lines' // dotted
+        },
+        tooltip: {
+          textStyle: {
+            fontStyle: 'italic'
+          }
+        },
+        data: this.getDataByMonth(art)
+      }
+    },
+
+    getDataByMonth(art) {
+      let arr = []
+      this.months.forEach(i => {
+        const item = this.data.find(e => (e.Yea === i.y && e.Mon === i.m && e.ArtF === art))
+        if (item) arr.push(item.q)
+        else arr.push(0)
+      })
+      if (arr.every(i => i < 20)) {
+        arr = []
+      }
+      return arr
+    },
+
+    createSeries() {
+      return this.allUniqLines().map(art => {
+        const line = this.createLine(art)
+        if (line.data.length !== 0) return line
+      })
+    }
+
+  }
+}
+</script>
