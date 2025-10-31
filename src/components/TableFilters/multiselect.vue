@@ -8,7 +8,7 @@
     multiple
     collapse-tags
     placeholder="мульти-список"
-    @input="input"
+    @change="select"
   >
     <div style="display: flex; justify-content: center; background: #e7e7e7;">
       <el-checkbox v-model="checked">Выбрать всё</el-checkbox>
@@ -71,7 +71,8 @@ export default {
 
   methods: {
 
-    input() {
+    select() {
+      console.log('change from multiselect')
       this.$emit('input', this.filters);
     },
 

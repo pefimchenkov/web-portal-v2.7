@@ -64,7 +64,7 @@
         :prop="column.value"
         :label="column.text"
         :align="textAlign ? 'center' : 'left'"
-        :width="column.width"
+        :min-width="column.width"
         :fixed="column.fixed"
         resizable
         :sortable="(`sortable` in templateHeaders[idx]) ? showSortable : column.sortable"
@@ -125,6 +125,8 @@ import { createHeaders, createSelectOptionsFromTableData, headersToObject } from
 import { get } from '@/api/market/orders'
 import { jira_url } from '@/settings.js'
 
+import { filterHandler } from '@/workers/filters.js'
+
 export default {
 
   filters: {
@@ -170,7 +172,8 @@ export default {
   },
 
   beforeMount() {
-    this.WindowHeight = window.innerHeight - 150
+    this.WindowHeight = window.innerHeight - 150;
+    this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
   },
 
   mounted() {
@@ -182,6 +185,12 @@ export default {
     await this.getOrders()
     this.formatters = [{ name: 'reporter', formatter: getUserName }]
     this.options = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters })
+
+    /* Web Worker для фильтров */
+
+      this.updateData();
+
+    /* *********************** */
   },
 
   methods: {
@@ -197,10 +206,19 @@ export default {
       this.WindowHeight = event.target.innerHeight - 240
     },
 
-    updateData(data) {
+    updateData() {
+      this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+        .then(res => {
+          this.filteredTableData = (res || this.tableData)
+          localStorage.setItem(this.reference, JSON.stringify(this.filters))
+        })
+        .catch(console.error)
+    },
+
+    /* updateData(data) {
       if (data) this.filteredTableData = data
       else this.filteredTableData = this.tableData
-    },
+    }, */
 
     updateFilters(val) {
       if (val) this.filters = { ...val }

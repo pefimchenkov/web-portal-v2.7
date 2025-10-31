@@ -54,6 +54,7 @@ export function setRemoteCustomSort(a, b, prop, order) {
 
 export function createSelectOptionsFromTableData({ data, columns }) {
   const obj = {}
+
   for (const column of columns) {
     obj[column?.name] = [... new Set(data.map(item => {
       return typeof column?.formatter === 'function'
@@ -61,6 +62,7 @@ export function createSelectOptionsFromTableData({ data, columns }) {
         : (item[column?.name] || 'нет данных')
     }))] // .filter(i => i)
   }
+  
   return obj
 }
 

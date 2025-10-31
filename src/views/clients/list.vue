@@ -150,6 +150,9 @@
         <template #[`item.CRM`]="{ item }">
           <v-icon :color="setColorCRM(item.CRM)" small>mdi-alert-decagram</v-icon>
         </template>
+        <template #[`item.EDO`]="{ item }">
+          <v-icon v-if="item.EDO" small>mdi-check-bold</v-icon>
+        </template>
 
         <template #[`item.LEGPERS`]="{ item }">
           <v-tooltip right>
@@ -301,6 +304,8 @@ export default {
     this.getClients()
     window.addEventListener('resize', this.getWindowHeight)
   },
+
+
   methods: {
 
     /* ------------ API методы ------------- */

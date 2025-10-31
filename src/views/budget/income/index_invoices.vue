@@ -84,13 +84,14 @@
       </el-button>
     </v-toolbar>
 
-    <!-- ТАБЛИЦА -->
+  
+    <!-- ТАБЛИЦА --> <!-- :key="key" -->
     <el-table
-      v-if="tableData.length"
       v-loading="loading"
+      v-if="tableData.length"
       :ref="reference"
-      :key="key"
       :data="paginatedTableData"
+      :key="paginatedTableData.length"
       :max-height="showHeader ? WindowHeight : ''"
       show-summary
       border
@@ -102,7 +103,7 @@
         color: '#6e6e6e'
       }"
       style="width: 100%"
-      @sort-change="customSort"
+      
     >
       <!-- Список столбцов таблицы -->
       <el-table-column
@@ -111,7 +112,7 @@
         :prop="column.value"
         :label="column.text"
         :align="column.align || (textCenter ? 'center' : 'left')"
-        :width="column.width"
+        :min-width="column.width"
         :fixed="column.fixed"
         :resizable="column.resizable"
         show-overflow-tooltip
@@ -121,9 +122,11 @@
           : false
         "
       >
+
         <!-- Заголовок таблицы -->
         <template slot="header" slot-scope="scope">
           <div style="word-break: keep-all;">{{ column.text }}</div>
+
           <TableFilters
             v-if="tableData.length"
             :reference="reference"
@@ -131,7 +134,8 @@
             :options="filtersOptions"
             :filters="filters"
             :types="{
-              Input: ['num', 'sale_num', 'pay', 'pay_dollar', 'sum', 'sale_sum', 'iKey', 'comment'],
+              InputNumber: ['sale_sum', 'sum', 'pay'],
+              Input: ['num', 'sale_num', 'pay_dollar', 'iKey', 'comment',],
               MultiSelect: ['contractorName', 'project', 'om', 'sm'],
               Select: ['currency'],
               CheckBox: ['factoring', 'netting', 'dolg_red', 'dolg_orange', 'overpayment'],
@@ -158,13 +162,17 @@
             @update="editItem"
             @update-manual="updateManual"
             @removeCustoms="removeCustoms"
-          ></component>
+          >
+          </component>
+
           <div v-else>
             {{ row[column.value] + column.fix }}
           </div>
         </template>
 
       </el-table-column>
+
+      
     </el-table>
 
     <pagination
@@ -181,6 +189,8 @@
 
 <script>
 
+
+
 import { templateHeaders, reference, exportFileName, dialogItems, dialogOptions } from './data_invoices.js'
 import { parseTime } from '@/utils'
 import { getUserName } from '@/filters/jira-users.js'
@@ -189,6 +199,8 @@ import { mapState } from 'vuex'
 
 //import { getHistoricalRates } from '@/api/cbr.js'
 import { getManualBills, getDataFromCrm, setManualBills, removeManualBills, getOrders, setProject, setSaleDate, setPayDate, setActive, setPaySum } from '@/api/budget/income'
+
+import { filterHandler } from '@/workers/filters.js'
 
 
 
@@ -205,7 +217,9 @@ export default {
     Pagination: () => import('@/components/Pagination/index.vue'),
     Dialog: () => import('@/components/Dialog/index.vue'),
     ExportExcel: () => import('@/components/ExportExcel'),
-    AccountBalances: () => import('../account-balances.vue')
+    AccountBalances: () => import('../account-balances.vue'),
+
+    Test: () => import('@/components/Test/index.vue'),
   },
 
   data() {
@@ -243,6 +257,9 @@ export default {
       exportFileName,
       dialogItems,
       dialogOptions,
+
+      a: 100,
+      b: 50
 
     }
   },
@@ -290,9 +307,16 @@ export default {
       immediate: true,
       deep: true,
       handler() {
-        this.getPaginationData()
+        this.getPaginationData();
       }
     },
+
+    listQuery: {
+      deep: true,
+      handler(val) {
+        localStorage.setItem('incomeInvoiceListQuery', JSON.stringify(val))
+      }
+    }
   },
 
 
@@ -300,10 +324,18 @@ export default {
 
   beforeMount() {
     this.WindowHeight = window.innerHeight - 220;
+    this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
+
+    const incomeInvoiceListQuery = localStorage.getItem('incomeInvoiceListQuery');
+    if (incomeInvoiceListQuery) {
+      this.listQuery = JSON.parse(incomeInvoiceListQuery);
+    }
+    
   },
 
   mounted() {
-    window.addEventListener('resize', this.getWindowHeight)
+    window.addEventListener('resize', this.getWindowHeight);
+
   },
 
 
@@ -325,7 +357,7 @@ export default {
     if (!this.DebtOffset?.length)
       await this.$store.dispatch('atlas_1c/getDebtOffset', dates);
     if (!this.Contractors?.length)
-      await await this.$store.dispatch('atlas_1c/getAtlasContractors');
+      await this.$store.dispatch('atlas_1c/getAtlasContractors');
     if (!this.IncomingPayments?.length)
       await this.$store.dispatch('atlas_1c/getAtlasIncomingPayments', dates);
     if (!this.Users?.length)
@@ -339,10 +371,6 @@ export default {
 
     const inactiveManualBills = this.manualBills.filter(item => item.active === 0).map(item => item.bill_1c)
     
-    /* this.manualBills.map(i => {
-      return i.active === 0 ? i : null
-    }).filter(i => i); */
-
     const FormattedCrmData = CrmData.map(data => {
         const requiredContractor = this.Contractors.find(item => item.id === data.contractor_id);
         return { ...data, contractorName: requiredContractor?.contractor  }
@@ -382,7 +410,7 @@ export default {
       const factoring_sum_arr = factoring.map(debt => debt?.paymentSum);
       const netting_sum_arr = netting.map(debt => debt?.paymentSum);
       const factoringAndNetting_sum_arr = factoringAndNetting.map(debt => debt?.paymentSum);
-      const incomingPaymentsSum = incomingPayments.reduce((a, { paymentSum }) =>  (a + paymentSum), 0);
+      const incomingPaymentsSum = incomingPayments?.reduce((a, { paymentSum }) =>  (a + paymentSum), 0);
 
 
       const om = FormattedCrmData.find(data => data.contractor_id === item.contractorId)?.MANAGER;
@@ -421,22 +449,31 @@ export default {
 
       const pay_dollar = factoringAndNetting_sum > 0 && factoringAndNetting.every(item => item.currencyRate > 1)
         ? factoringAndNetting.reduce((a, { paymentSum }) => (a + paymentSum), 0)
-        : incomingPayments.reduce((a, { paymentSum, currencyRate }) => (a + (paymentSum / currencyRate)), 0);
+        : incomingPayments?.reduce((a, { paymentSum, currencyRate }) => (a + (paymentSum / currencyRate)), 0);
 
 
 
-      const saleSumWithRate = manualBill?.sale_date
-        ? item.sum
-        : sales.reduce((acc, { sum, currencyRate }) => (acc + (sum * currencyRate)), 0).toFixed(2);
+      const saleSumWithRate =  manualBill?.sale_date
+        ? sales && sales.length
+          ? sales.reduce((acc, { sum, currencyRate }) => (acc + (sum * currencyRate)), 0).toFixed(2)
+          : incomingPayments?.reduce((a, { paymentSum, currencyRate }) => (a + (paymentSum / currencyRate)), 0)
+        : sales.reduce((acc, { sum, currencyRate }) => (acc + (sum * currencyRate)), 0).toFixed(2)
+      
+      const dolg_orange = manualBill?.pay_sum
+        ? this.setDolgOrange(saleSumWithRate, manualBill?.pay_sum, pay_date)
+        : (Number(pay_dollar.toFixed(2)) - item.sum) === 0
+          ? 0
+          : this.setDolgOrange(saleSumWithRate, incomingPaymentsWithDebtOffset )
 
       
-      if (item.num.includes("23120000116")) {
+      if (item.num.includes("0704254")) {
         console.log(item)
-        console.log("sale", sales)
-        console.log('incomingPayments', incomingPayments)
-        console.log('factoringAndNetting', factoringAndNetting)
+        console.log('pay_dollar', pay_dollar)
+        console.log("saleSumWithRate", Number(saleSumWithRate))
+        console.log("sales", sales)
+        console.log('incomingPaymentsWithDebtOffset', incomingPaymentsWithDebtOffset)
         console.log('manualBill', manualBill)
-        console.log('otsrochka', otsrochka)
+        console.log('dolg_orange', dolg_orange)
       }
 
 
@@ -469,25 +506,43 @@ export default {
           pay_date: manualBill?.pay_date
               ? new Date(manualBill.pay_date)
               : pay_date,
-            
 
+          dolg_orange: dolg_orange,
+            
           dolg_red: manualBill?.pay_sum
             ? this.setDolgRed(saleSumWithRate, manualBill?.pay_sum, pay_date)
             : (Number(pay_dollar.toFixed(2)) - item.sum) === 0
               ? 0
               : this.setDolgRed(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date),
           
-          dolg_orange: manualBill?.pay_sum
-            ? this.setDolgOrange(saleSumWithRate, manualBill?.pay_sum, pay_date)
-            : (Number(pay_dollar.toFixed(2)) - item.sum) === 0
-              ? 0
-              : this.setDolgOrange(saleSumWithRate, incomingPaymentsWithDebtOffset ),
 
           overpayment: manualBill?.pay_sum
             ? this.setOverpayment(saleSumWithRate, manualBill?.pay_sum, pay_date)
-            : (Number(pay_dollar.toFixed(2)) - item.sum) === 0
-              ? 0
-              : this.setOverpayment(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date),
+            : Number(saleSumWithRate) === 0 && dolg_orange === 0
+              ? incomingPaymentsWithDebtOffset.reduce((a, { paymentSum }) => { return (a + (paymentSum)) }, 0)
+              : sales.every(item => item.currencyRate > 1)
+                ? (Number(pay_dollar.toFixed(2)) - item.sum) === 0
+                  ? 0
+                  : this.setOverpayment(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date)
+                : this.setOverpayment(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date),
+
+
+
+
+              /* ? sales.every(item => item.currencyRate > 1)
+                ? (Number(pay_dollar.toFixed(2)) - item.sum) === 0
+                  ? 0
+                  : incomingPaymentsWithDebtOffset.reduce((a, { paymentSum }) => { a + paymentSum }, 0) - Number(saleSumWithRate)
+                :this.setOverpayment(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date)
+              : this.setOverpayment(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date) */
+
+
+             // && sales.every(item => item.currencyRate > 1)
+
+            /*   ? incomingPaymentsWithDebtOffset.reduce((a, { paymentSum }) => { (a + paymentSum) }, 0) - dolg_orange
+              : sales.every(item => item.currencyRate > 1)
+                ? Math.abs(pay_dollar - sales.reduce((a, { sum }) => (a + sum), 0))
+                : this.setOverpayment(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date), */
 
           ...item,
         
@@ -496,7 +551,7 @@ export default {
 
 
     this.tableData = this.filteredTableData = [...commonData].filter(i => i)
-    this.customSort({ prop: "date", order: "ascending" })
+    this.customSort({ prop: "date", order: "ascending" });
 
     this.formatters = [
       { name: 'currency' },
@@ -508,6 +563,12 @@ export default {
     ]
     this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters })
 
+    /* Web Worker для фильтров */
+    
+    this.updateData();
+
+    /* *********************** */
+  
   },
 
   // =============================================== МЕТОДЫ ================================================ //
@@ -528,23 +589,36 @@ export default {
       this.filteredTableData = this.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
     },
 
-    updateData(data) {
-      this.filteredTableData = data || this.tableData
+    updateData() {
+      this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+        .then(res => {
+          this.filteredTableData = (res || this.tableData)
+          localStorage.setItem(this.reference, JSON.stringify(this.filters))
+        })
+        .catch(console.error)
     },
+
 
     updateFilters(val) {
       if (val) this.filters = { ...val }
     },
 
+
+
     resetFilters() {
       this.filters = {}
-      this.updateData()
+      this.filteredTableData = this.tableData
+      //this.updateData()
     },
+
+
 
     addItem() {
       this.action = 'add'
       this.dialog = true
     },
+
+
 
     async editItem(item) {
       this.editedItem = {
@@ -560,6 +634,8 @@ export default {
       this.dialog = true
 
     },
+
+
 
     updateInvoice(item) {
       console.log(item)
@@ -678,7 +754,6 @@ export default {
             email: this.email
           }
 
-          console.log(data)
 
           setActive(data)
             .then(res => {
@@ -738,7 +813,8 @@ export default {
 
 
     getSummaries(params) {
-      const { columns } = params
+      const { columns } = params;
+
       const props = [
         'sale_sum',
         'dolg_red',
@@ -830,7 +906,7 @@ export default {
 
 
     setFactPayDate(payments) {
-      const lastElement = payments[payments.length - 1];
+      const lastElement = payments[payments?.length - 1];
       return lastElement?.paymentDate || lastElement?.subjectDate;
     },
 
@@ -900,4 +976,3 @@ export default {
 	max-width: 100px !important;
 }
 </style>
-./data_invoice.js/index.js

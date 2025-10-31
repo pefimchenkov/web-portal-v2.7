@@ -151,11 +151,15 @@ import { mapState } from 'vuex'
 import Roles from './components/Permissions.js'
 
 export default {
+
+
   filters: {
     translateRoles(val) {
-      return val.map(item => Roles.find(i => i.eng === item).rus).join(', ')
+      return val.map(item => Roles.find(i => i.eng === item)?.rus).join(', ')
     }
   },
+
+
   components: {
     Permissions: () => import('./components/Permissions.vue')
   },
@@ -191,6 +195,7 @@ export default {
         }
       ]
     },
+
     selected() {
       if (!this.active.length) return undefined
       this.$store.dispatch('fb/getSelectedUserData', { uid: this.active[0] }, { root: true })
@@ -199,18 +204,24 @@ export default {
     filter() {
       return (item, search, textKey) => item[textKey].indexOf(search) > -1
     },
+
     userRoles() {
       return this.config.userRole.split('&') || []
     }
   },
+
+
   watch: {
     selected: 'randomAvatar'
   },
+
 
   async created() {
     await this.$store.dispatch('fetchJiraUsers')
     await this.$store.dispatch('fb/getUsers', { root: true })
   },
+
+
 
   methods: {
     async fetchUsers(item) {

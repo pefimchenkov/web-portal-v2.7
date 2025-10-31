@@ -4,12 +4,10 @@
     v-model="filters[property]"
     size="mini"
     placeholder="числовой"
-    clearable
+    :precision="2"
     :controls="false"
-    :min="1"
-    :max="10000"
-    style="width: 70px"
-    @input="input"
+    style="width: 90px"
+    @change="change"
   />
 </template>
 
@@ -25,12 +23,10 @@ export default {
       default: () => {}
     }
   },
-  data() {
-    return {
-    }
-  },
+
   methods: {
-    input() {
+    change() {
+      //console.log('change from InputNumber ', this.filters)
       this.$emit('input', this.filters)
     }
   },

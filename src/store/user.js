@@ -58,18 +58,23 @@ export default {
     SET_TOKEN: (state, payload) => {
       state.token = payload
     },
+
     setUser(state, payload) {
       state.user = payload
     },
+
     setCurrentUser(state, payload) {
       state.currentUser = payload
     },
+
     SET_USER_ROLES(state, payload) {
       state.userRole = payload
     },
+
     USER_ROLES_BY_UID(state, payload) {
       state.selectedUserRole = payload
     },
+
     setUserInfo(state, payload) {
       if (payload) {
         state.info = payload
@@ -78,11 +83,13 @@ export default {
         console.log(state.info)
       }
     },
+
     CHANGE_INFO(state, { key, value }) {
       if (state.info.hasOwnProperty.call({ key, value }, 'key')) {
         state.info[key] = value
       }
     },
+
     GET_BONUS_SALE(state, payload) {
       state.BonusSale = payload
     },
@@ -120,6 +127,8 @@ export default {
       state.ChartUsersProfit = payload
     }
   },
+
+  
   actions: {
     async registerUser({ commit }, { email, password }) {
       commit('clearError')

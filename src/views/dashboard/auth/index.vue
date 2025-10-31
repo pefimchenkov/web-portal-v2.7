@@ -10,17 +10,19 @@
       @handleSetLineChartData="handleSetLineChartData"
     />
 
-    <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
-      <line-chart-atlas
-        :chart-data="created_Atlas_resolved"
-      />
-    </el-row>
+    <div style="height: 70dvh; overflow: auto">
+      <el-row style="background:#fff; padding:16px 16px 0; margin-bottom:32px;">
+        <line-chart-atlas
+          :chart-data="created_Atlas_resolved"
+        />
+      </el-row>
 
-    <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
-      <line-chart-other
-        :chart-data="created_Other_resolved"
-      />
-    </el-row>
+      <el-row style="background:#fff; padding:16px 16px 0; margin-bottom:32px;">
+        <line-chart-warehouse
+          :chart-data="warehouse"
+        />
+      </el-row>
+    </div>
 
   </div>
 </template>
@@ -28,9 +30,21 @@
 <script>
 import PanelGroup from './components/PanelGroup'
 import LineChartAtlas from './components/LineChartAtlas'
-import LineChartOther from './components/LineChartOther'
+import LineChartWarehouse from './components/LineChartWarehouse'
 
-import { getCreatedAtlasRemonts, getResolvedAtlasRemonts, getCreatedOtherRemonts, getResolvedOtherRemonts, getCurrentCreatedRemonts } from '@/api/statistics/remonts'
+import {
+    getCreatedAtlasRemonts,
+    getResolvedAtlasRemonts,
+    getCreatedOtherRemonts,
+    getResolvedOtherRemonts,
+    getCurrentCreatedRemonts,
+    getClosedPresales,
+    getClosedAcceptance,
+    getClosedDelivery,
+    getClosedTemporaryUsed,
+    getClosedIssuance
+  } from '@/api/statistics/remonts'
+
 import { getCurrentCreatedComments } from '@/api/statistics/comments'
 import { getJiraActiveUsers } from '@/api/statistics/jira'
 
@@ -43,7 +57,7 @@ export default {
 
     PanelGroup,
     LineChartAtlas,
-    LineChartOther
+    LineChartWarehouse
   },
 
   data() {
@@ -53,6 +67,11 @@ export default {
       resolvedAtlasRemonts: [],
       createdOtherRemonts: [],
       resolvedOtherRemonts: [],
+      closedPresales: [],
+      closedAcceptance: [],
+      closedDelivery: [],
+      closedTemporaryUsed: [],
+      closedIssuance: [],
 
       currentCreatedRemonts: null,
       currentCreatedComments: null,
@@ -65,7 +84,6 @@ export default {
   computed: {
 
     created_Atlas_resolved() {
-      
       return {
         createdData: this.createdAtlasRemonts,
         resolvedData: this.resolvedAtlasRemonts,
@@ -75,10 +93,21 @@ export default {
     },
 
     created_Other_resolved() {
-      
       return {
         createdData: this.createdOtherRemonts,
         resolvedData: this.resolvedOtherRemonts,
+        interval: this.interval
+
+      }
+    },
+
+    warehouse() {
+      return {
+        presalesData: this.closedPresales,
+        acceptanceData: this.closedAcceptance,
+        deliveryData: this.closedDelivery,
+        temporaryUsedData: this.closedTemporaryUsed,
+        issuanceData: this.closedIssuance,
         interval: this.interval
 
       }
@@ -91,12 +120,18 @@ export default {
   created() {
     this.getCreatedAtlasRemonts();
     this.getResolvedAtlasRemonts();
-    this.getCreatedOtherRemonts()
-    this.getResolvedOtherRemonts()
+    this.getCreatedOtherRemonts();
+    this.getResolvedOtherRemonts();
+    this.getClosedPresales();
+    this.getClosedAcceptance();
+    this.getClosedDelivery();
+    this.getClosedTemporaryUsed();
+    this.getClosedIssuance();
 
     this.getCurrentCreatedRemonts();
     this.getCurrentCreatedComments();
     this.getJiraActiveUsers();
+
     this.$store.dispatch('getRatefromCB');
   },
 
@@ -106,7 +141,7 @@ export default {
       // this.lineChartData = this.lineChartData[type]
     },
 
-    /* ***** */
+    /* ********************************** */
     async getCreatedAtlasRemonts() {
       const res = await getCreatedAtlasRemonts()
       this.createdAtlasRemonts = res.map(i => i.Qty)
@@ -129,7 +164,37 @@ export default {
       this.resolvedOtherRemonts = res.map(i => i.Qty)
     },
 
-    /* ***** */
+    async getClosedPresales() {
+      const res = await getClosedPresales()
+      console.log('closedPresales', res)
+      this.closedPresales = res.map(i => i.Qty)
+    },
+
+    async getClosedAcceptance() {
+      const res = await getClosedAcceptance()
+      console.log('closedAcceptance', res)
+      this.closedAcceptance = res.map(i => i.Qty)
+    },
+
+    async getClosedDelivery() {
+      const res = await getClosedDelivery()
+      console.log('closedDelivery', res)
+      this.closedDelivery = res.map(i => i.Qty)
+    },
+
+    async getClosedTemporaryUsed() {
+      const res = await getClosedTemporaryUsed()
+      console.log('closedTemporaryUsed', res)
+      this.closedTemporaryUsed = res.map(i => i.Qty)
+    },
+
+    async getClosedIssuance() {
+      const res = await getClosedIssuance()
+      console.log('closedIssuance', res)
+      this.closedIssuance = res.map(i => i.Qty)
+    },
+
+    /* ********************************* */
 
     async getCurrentCreatedRemonts() {
       const res = await getCurrentCreatedRemonts()

@@ -56,7 +56,7 @@ export function validAlphabets(str) {
 }
 
 export function validNumber(str) {
-  const reg = /^[0-9]+$/
+  const reg = /^[-+]?[0-9]+$/
   return reg.test(str)
 }
 

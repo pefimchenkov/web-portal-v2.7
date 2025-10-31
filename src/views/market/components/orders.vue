@@ -14,6 +14,7 @@
       @closeDialog="dialogEdit = false"
       @update="update"
     />
+
     <EditParts
       v-if="Object.keys(editedItem).length > 0"
       :id="editedItem.id"
@@ -45,7 +46,34 @@
       @update="update"
     />
 
-    <div @click="dialog = true" style="padding: 5px 0;">Список заказов</div>
+    <LinkPurchase
+      :id="editedItem.id"
+      :show="dialogLinkPurchase"
+      @closeDialog="dialogLinkPurchase = false"
+      @update="update"
+    />
+
+    <CreatePurchase
+      :id="editedItem.id"
+      :show="dialogCreatePurchase"
+      :comment="editedItem.comment"
+      :parts="partsByOrderId(editedItem.id)"
+      @closeDialog="dialogCreatePurchase = false"
+      @resetId="editedItem.id = null"
+      @update="update"
+    />
+
+
+    <el-button
+      icon="el-icon-s-cooperation"
+      size="mini"
+      class=""
+      @click="dialog = true"
+    >
+      Список заказов
+    </el-button>
+
+
     <el-dialog :visible.sync="dialog" append-to-body fullscreen>
 
 
@@ -160,14 +188,28 @@
                 width="50"
               />
               <el-table-column
+                label="Тип заказа"
+                prop="type"
+              >
+                <template slot-scope="{ row }">
+                  <div v-if="row.type === 'sale'" style="background: #67cbe1; padding: 0 10px; color: #fff; width: 80px">Продажа</div>
+                  <div v-if="row.type === 'purchase'" style="background: #e99f42; padding: 0 10px; color: #fff; width: 80px">Закупка</div>
+                </template>
+              </el-table-column>
+
+              <el-table-column
                 label="Тип цены"
                 prop="price_type"
               >
-                <template slot-scope="scope">
+                <template
+                  v-if="row.type === 'sale'"
+                  slot-scope="{ row }"
+                >
                   <i class="el-icon-money" />
-                  <span style="margin-left: 10px">{{ xformPriceType(scope.row.price_type) }}</span>
+                  <span style="margin-left: 10px">{{ xformPriceType(row.price_type) }}</span>
                 </template>
               </el-table-column>
+
               <el-table-column
                 label="Автор"
                 prop="reporter"
@@ -176,6 +218,7 @@
                   {{ props.row.reporter | getUserName }}
                 </template>
               </el-table-column>
+
               <el-table-column
                 label="Создан"
                 prop="created_date"
@@ -185,6 +228,7 @@
                   <span>{{ new Date(scope.row.created_date).toLocaleDateString('ru', {hour: '2-digit', minute:'2-digit'}) }}</span>
                 </template>
               </el-table-column>
+
               <el-table-column
                 label="Изменён"
                 prop="updated_date"
@@ -194,6 +238,7 @@
                   <span>{{ scope.row.updated_date ? new Date(scope.row.updated_date).toLocaleDateString('ru', {hour: '2-digit', minute:'2-digit'}) : new Date(scope.row.created_date).toLocaleDateString('ru') }}</span>
                 </template>
               </el-table-column>
+
               <el-table-column
                 label="Комментарий"
                 prop="comment"
@@ -207,6 +252,7 @@
                   <span>{{ scope.row.total ? (scope.row.total - scope.row.sale_xl).toLocaleString('ru', { style: 'currency', currency: 'RUB' }) : 'нет данных' }}</span>
                 </template>
               </el-table-column>
+
               <el-table-column
                 label="Скидка на заказ"
                 prop="sale_xl"
@@ -216,14 +262,16 @@
                   <span>{{ scope.row.sale_xl ? scope.row.sale_xl.toLocaleString('ru', { style: 'currency', currency: 'RUB' }) : '' }}</span>
                 </template>
               </el-table-column>
+
               <el-table-column
-                label="SALE"
+                label="JIRA"
                 prop="sale_id"
               >
                 <template slot-scope="scope">
                   <el-link type="primary" :href="$options._SETTINGS.jira_url + scope.row.sale_id" target="_blank">{{ scope.row.sale_id }}</el-link>
                 </template>
               </el-table-column>
+              
               <el-table-column
                 label="Действия"
                 prop="action"
@@ -231,7 +279,7 @@
                 align="center"
                 style="cursor: pointer !important;"
               >
-                <template slot-scope="scope">
+                <template slot-scope="{ row }">
                   <el-dropdown trigger="click" style="cursor: pointer; width: 100%" @command="handleCommand">
                     <div>
                       <i
@@ -239,12 +287,18 @@
                       />
                     </div>
                     <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item :command="{ action: 'edit', row: scope.row }">Редактировать заказ</el-dropdown-item>
-                      <el-dropdown-item :command="{ action: 'edit_parts', row: scope.row }">Редактировать состав</el-dropdown-item>
-                      <el-dropdown-item v-if="!scope.row.sale_id" :command="{ action: 'link_sale', row: scope.row }">Привязать SALE</el-dropdown-item>
-                      <el-dropdown-item v-if="scope.row.sale_id" :command="{ action: 'unlink_sale', row: scope.row }">Отвязать SALE</el-dropdown-item>
-                      <el-dropdown-item v-if="!scope.row.sale_id" :command="{ action: 'create_sale', row: scope.row }">Создать SALE</el-dropdown-item>
-                      <el-dropdown-item :command="{ action: 'remove', row: scope.row }">Удалить заказ</el-dropdown-item>
+                      <el-dropdown-item :command="{ action: 'edit', row }">Редактировать заказ</el-dropdown-item>
+                      <el-dropdown-item :command="{ action: 'edit_parts', row }">Редактировать состав</el-dropdown-item>
+
+                      <el-dropdown-item v-if="!row.sale_id && row.type === 'sale'" :command="{ action: 'link_sale', row }">Привязать SALE</el-dropdown-item>
+                      <el-dropdown-item v-if="row.sale_id && row.type === 'sale'" :command="{ action: 'unlink_sale', row }">Отвязать SALE</el-dropdown-item>
+                      <el-dropdown-item v-if="!row.sale_id && row.type === 'sale'" :command="{ action: 'create_sale', row }">Создать SALE</el-dropdown-item>
+
+                      <el-dropdown-item v-if="!row.sale_id && row.type === 'purchase'" :command="{ action: 'link_purchase', row }">Привязать ZAKUPKA</el-dropdown-item>
+                      <el-dropdown-item v-if="row.sale_id && row.type === 'purchase'" :command="{ action: 'unlink_purchase', row }">Отвязать ZAKUPKA</el-dropdown-item>
+                      <el-dropdown-item v-if="!row.sale_id && row.type === 'purchase'" :command="{ action: 'create_purchase', row }">Создать ZAKUPKA</el-dropdown-item>
+
+                      <el-dropdown-item :command="{ action: 'remove', row }">Удалить заказ</el-dropdown-item>
                     </el-dropdown-menu>
                   </el-dropdown>
                 </template>
@@ -263,7 +317,7 @@ import settings from '@/settings'
 import { mapState, mapGetters } from 'vuex'
 // import _ from 'lodash'
 // import Confirm from '@/components/shared/Confirm'
-import { get, remove, getParts, unlinkSale } from '@/api/market/orders'
+import { get, remove, getParts, unlinkSale, unlinkPurchase } from '@/api/market/orders'
 import { getUserName } from '@/filters/jira-users.js'
 
 export default {
@@ -273,7 +327,9 @@ export default {
     Edit: () => import('./edit-order.vue'),
     EditParts: () => import('./edit-order-parts.vue'),
     LinkSale: () => import('./link-sale.vue'),
-    CreateSale: () => import('./create-sale.vue')
+    CreateSale: () => import('./create-sale.vue'),
+    LinkPurchase: () => import('./link-purchase.vue'),
+    CreatePurchase: () => import('./create-purchase.vue')
   },
 
   filters: { getUserName },
@@ -302,6 +358,8 @@ export default {
       dialogEditParts: false,
       dialogLinkSale: false,
       dialogCreateSale: false,
+      dialogLinkPurchase: false,
+      dialogCreatePurchase: false,
       Comment: '',
       search: '',
       loading: false
@@ -371,6 +429,7 @@ export default {
       this.loading = true;
       await get()
         .then(res => {
+
           const arr = res.map(item => {
             item.total = this.getTotal(item)
             return item
@@ -527,6 +586,9 @@ export default {
       if (data.action === 'link_sale') this.linkSale(data.row)
       if (data.action === 'unlink_sale') this.unlinkSale(data.row)
       if (data.action === 'create_sale') this.createSale(data.row)
+      if (data.action === 'link_purchase') this.linkPurchase(data.row)
+      if (data.action === 'unlink_purchase') this.unlinkPurchase(data.row)
+      if (data.action === 'create_purchase') this.createPurchase(data.row)
       if (data.action === 'remove') this.remove(data.row)
     },
 
@@ -539,6 +601,10 @@ export default {
       this.editedItem = { ...val }
       setTimeout(() => (this.dialogEditParts = true), 200)
     },
+
+
+
+
 
     linkSale(val) {
       this.editedItem = { ...val }
@@ -563,6 +629,32 @@ export default {
       this.editedItem = { ...val }
       setTimeout(() => (this.dialogCreateSale = true), 200)
     },
+
+    linkPurchase(val) {
+      this.editedItem = { ...val }
+      setTimeout(() => (this.dialogLinkPurchase = true), 200)
+    },
+
+    unlinkPurchase(val) {
+      this.$confirm('Вы точно хотите продолжить?', 'Внимание', {
+        confirmButtonText: 'Да',
+        cancelButtonText: 'Нет',
+        type: 'warning'
+      }).then(() => {
+        unlinkPurchase({ id: val.id })
+          .then(async res => {
+            this.$message({ type: 'success', message: res })
+            await this.getOrders()
+          })
+      })
+    },
+
+    createPurchase(val) {
+      this.editedItem = { ...val }
+      setTimeout(() => (this.dialogCreatePurchase = true), 200)
+    },
+
+
 
     async update() {
       await this.getOrdersParts()

@@ -14,14 +14,15 @@
       }"
       :max-height="WindowHeight"
       style="width: 100%; height: 100%"
+      class="custom-table"
     >
     {{ lastYearTotals  }}
 
-    <template #append>
+    <!-- <template #append>
         <div style="height: 50px; display: flex; justify-content: center; align-items: center; font-weight: bold;">
         {{ 'Сумма долга за ' + lastYearTotals.year + ' год составляет ' + lastYearTotals.total.toLocaleString("ru", { style: "currency", currency: "RUB" }) }}</div>
     </template>
-
+    -->
       <el-table-column
         v-for="(column) in selectedHeaders"
         :key="column.id"
@@ -77,7 +78,6 @@
 
 <script>
 
-import currency from '@/store/currency.js'
 import { templateHeaders, reference  } from './data_months.js'
 import { createHeaders, headersToObject, getSummariesRow, createSelectOptionsFromTableData } from '@/components/DataTable/utils.js'
 
@@ -183,8 +183,6 @@ export default {
 
             const groupedMonths = this.groupBy(months, 'monthName');
 
-            console.log('groupedMonths', groupedMonths)
-
             this.tableData = groupedMonths.map(item => {
                 return {
                     monthName: item.values[item.values.length - 1].monthName,
@@ -195,7 +193,17 @@ export default {
                     incomes: item.values.reduce((acc, { incomes }) => { return (acc + incomes) }, 0),
                     outcomes: item.values.reduce((acc, { outcomes }) => { return (acc + outcomes) }, 0)
                 }
-            })
+            });
+            
+            this.tableData.unshift({
+                    monthName: 'за ' + this.lastYearTotals.year + ' г.',
+                    otgruzki: this.lastYearTotals.total,
+                    otgruzki_saldo: 0,
+                    buhs: 0,
+                    buhs_saldo: 0,
+                    incomes: 0,
+                    outcomes: 0
+            });
 
             this.tableData.forEach((item, i, arr) => {
                 const start_otgruzki = item.otgruzki;
@@ -207,7 +215,8 @@ export default {
                 item.otgruzki_saldo = otgruzki_saldo
                 item.buhs_saldo =  buhs_saldo
                 
-            })
+            });
+
 
             console.log('this.tableData', this.tableData)
 
@@ -296,3 +305,13 @@ export default {
 }
 
 </script>
+
+<style>
+
+    .custom-table tr:first-child {
+        background: #ffe2e2;
+        font-weight: 600;
+    }
+
+
+</style>

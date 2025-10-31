@@ -95,7 +95,7 @@
         :prop="column.value"
         :label="column.text"
         :align="column.align || (textCenter ? 'center' : 'left')"
-        :width="column.width"
+        :min-width="column.width"
         :fixed="column.fixed"
         resizable
         :sortable="
@@ -175,6 +175,7 @@ import { mapState } from 'vuex'
 import { getHistoricalRates } from '@/api/cbr.js'
 import { getManualBills, setManualBills, removeManualBills, setActive } from '@/api/budget/income'
 
+import { filterHandler } from '@/workers/filters.js'
 
 export default {
 
@@ -257,6 +258,7 @@ export default {
 
   beforeMount() {
     this.WindowHeight = window.innerHeight - 220;
+    this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
   },
 
   mounted() {
@@ -334,7 +336,12 @@ export default {
       { name: 'project' },
       { name: 'pay', formatter: this.objToString }
     ]
-    this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters })
+    this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters });
+
+    /* Web Worker для фильтров */
+    this.updateData();
+    /* *********************** */
+
   },
 
   // =============================================== МЕТОДЫ ================================================ //
@@ -356,8 +363,17 @@ export default {
       this.filteredTableData = this.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
     },
 
-    updateData(data) {
+    /* updateData(data) {
       this.filteredTableData = data || this.tableData
+    }, */
+
+    updateData() {
+      this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+        .then(res => {
+          this.filteredTableData = (res || this.tableData)
+          localStorage.setItem(this.reference, JSON.stringify(this.filters))
+        })
+        .catch(console.error)
     },
 
     updateFilters(val) {

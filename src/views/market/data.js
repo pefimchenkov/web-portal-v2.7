@@ -27,7 +27,7 @@ const elementTypes = [
 const actions = [
   { name: 'update', text: 'Редактировать', access: 'Nom' },
   { name: 'remove', text: 'Удалить', access: 'Nom' },
-  { name: 'addToBasket', text: 'Добавить в заказ', access: [ 'Order', 'Manager', 'ServiceManager' ] },
+  { name: 'addToBasket', text: 'Добавить в корзину', access: [ 'Order', 'Manager', 'ServiceManager' ] },
   { name: 'openTH', text: 'Технические характеристики', access: 'Nom' },
   { name: 'detail', text: 'Подробнее', access: ['Nom', 'LeadEngineer', 'Financier', 'Agent'] },
 ]

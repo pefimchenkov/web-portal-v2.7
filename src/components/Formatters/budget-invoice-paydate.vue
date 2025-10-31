@@ -67,8 +67,8 @@ export default {
   methods: {
 
     formatDate(val) {
-      if (!val) return 
-      return val.toLocaleDateString("ru")
+      if (!val) return
+      return new Date(val).toLocaleDateString("ru")
     },
 
     checkDays(date) {

@@ -32,7 +32,7 @@ module.exports = {
   devServer: {
     port: port,
     open: false,
-    // host: 'dev.tsd-group.ru',
+    host: 'dev.atlas-pro24.local',
     overlay: {
       warnings: false,
       errors: true

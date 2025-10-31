@@ -36,7 +36,7 @@ const local_projects = [
 
 
 const templateHeaders = [
-  { text: 'Клиент', value: 'contractorName', sortable: 'custom', width: 300, fixed: 'left' },
+  { text: 'Клиент', value: 'contractorName', sortable: 'custom', width: 300, },
   { text: 'JIRA', value: 'iKey', sortable: 'custom', align: 'left', width: 145, formatter: JiraLink },
   { text: 'Проект 1С', value: 'project', sortable: 'custom', width: 155, formatter: BudgetInvoiceManualSelect },
   { text: 'Примечание', value: 'comment', sortable: 'custom', align: 'left', width: 155, formatter: JiraLink },
@@ -53,7 +53,7 @@ const templateHeaders = [
   { text: '% премии СМ', value: 'sm_percent', sortable: 'custom', width: 100, formatter: BudgetInvoiceManualInput },
   { text: 'Сумма ОМ', value: 'om_sum', sortable: 'custom', width: 100, },
   { text: 'Сумма СМ', value: 'sm_sum', sortable: 'custom', width: 100, },
-  { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, fixed: 'right' }
+  { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, }
 ]
 
 const dialogItems = [

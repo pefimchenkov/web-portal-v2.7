@@ -7,6 +7,17 @@ export function getExpendedZip(data) {
     data
   })
 }
+
+
+export function getCurrentNeedForExpendedZip(data) {
+  return request({
+    url: '/zip/expended/current_need',
+    method: 'post',
+    data
+  })
+}
+
+
 export function getFiltersForExpendedZip(params) {
   return request({
     url: '/zip/filters_for_expended',
@@ -14,6 +25,7 @@ export function getFiltersForExpendedZip(params) {
     params
   })
 }
+
 
 export function insertSalesReportToDB(data) {
   return request({

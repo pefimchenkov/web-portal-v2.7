@@ -101,7 +101,7 @@
         :prop="column.value"
         :label="column.text"
         :align="textAlign ? 'center' : 'left'"
-        :width="column.width"
+        :min-width="column.width"
         :fixed="column.fixed"
         resizable
         :sortable="
@@ -137,6 +137,7 @@
             :options="filtersOptions"
             :filters="filters"
             :types="{
+              InputNumber: ['ID'],
               Input: ['MODEL'],
               MultiSelect: ['TYPE', 'VENDOR', 'EMAIL'],
               Date: ['DATE'],
@@ -173,7 +174,9 @@ import { createHeaders, createSelectOptionsFromTableData, headersToObject, setRe
 
 import { addOne, updateOne, deleteOne } from '@/api/models/models.js'
 // import { getAllByModel } from '@/api/models/engineers.js'
-import { mapState } from 'vuex'
+import { mapState } from 'vuex';
+
+import { filterHandler } from '@/workers/filters.js'
 
 export default {
 
@@ -190,6 +193,7 @@ export default {
     Dialog: () => import('@/components/Dialog'),
 
     ExportExcel: () => import('@/components/ExportExcel')
+    
   },
 
   data() {
@@ -255,7 +259,8 @@ export default {
   },
 
   beforeMount() {
-    this.WindowHeight = window.innerHeight - 150
+    this.WindowHeight = window.innerHeight - 150;
+    this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
   },
 
   mounted() {
@@ -278,7 +283,13 @@ export default {
       { name: 'TYPE' },
       { name: 'VENDOR' }
     ]
-    this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters })
+    this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters });
+
+    /* Web Worker для фильтров */
+    
+    this.updateData();
+
+    /* *********************** */
   },
 
   methods: {
@@ -330,8 +341,17 @@ export default {
       this.total = this.filteredTableData.length
     },
 
-    updateData(data) {
+    /* updateData(data) {
       this.filteredTableData = data || this.tableData
+    }, */
+
+    updateData() {
+      this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+        .then(res => {
+          this.filteredTableData = (res || this.tableData)
+          localStorage.setItem(this.reference, JSON.stringify(this.filters))
+        })
+        .catch(console.error)
     },
 
     updateFilters(val) {

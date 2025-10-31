@@ -1,21 +1,22 @@
 <template>
-  <div :style="{zIndex:zIndex,height:height,width:width}" class="pan-item">
+  <div :style="{ zIndex: zIndex, height: height, width: width }" class="pan-item">
     <div class="pan-info">
       <div class="pan-info-roles-container">
         <slot />
       </div>
     </div>
-    <div :style="{backgroundImage: `url(${image})`}" class="pan-thumb" />
+    <div :style="{ backgroundImage: `url(${this.image})` }" class="pan-thumb" />
   </div>
 </template>
 
 <script>
 export default {
+
   name: 'PanThumb',
+
   props: {
     image: {
       type: String,
-      required: true
     },
     zIndex: {
       type: Number,
@@ -29,7 +30,8 @@ export default {
       type: String,
       default: '150px'
     }
-  }
+  },
+
 }
 </script>
 

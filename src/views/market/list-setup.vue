@@ -1,5 +1,7 @@
 <template>
   <v-container v-loading="(!state.tableData.length || state.loadingForRemove)" :fill-height="!state.tableData.length" fluid>
+
+
     <Dialog
       v-if="state.dialog"
       ref="dialogForm"
@@ -44,7 +46,11 @@
       </template>
     </Dialog>
 
+
+
+
     <!-- Добавление в корзину (кол-во)  -->
+
     <ConfirmWithCount
       ref="confirm_with_count"
       @Count="addItemToBasket"
@@ -78,52 +84,35 @@
       <v-divider class="mx-3" inset vertical />
 
       <v-spacer />
+      
 
       <!--------- Курсы валют ---------->
       <ExchangeRates />
       <v-spacer />
 
+      <v-divider class="mx-3" inset vertical />
+
       <!-- Заказы (магазин) -->
-      <el-dropdown
-        v-if="(basket.length > 0 || orders.length > 0)"
-        trigger="click"
-        :hide-on-click="false"
-        @command="handleCommandOrders"
-      >
-        <el-button
-          icon="el-icon-s-cooperation"
-          size="mini"
-        >
-          Заказы
-        </el-button>
 
-        <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item
-            v-if="basket.length > 0"
-            :hide-on-click="false"
-            command="showBasket"
-          >
-            <Basket
-              :show="state.showBasket"
-              @close="state.showBasket = false"
-              @updateFromBasket="updateFromBasket"
-            />
-          </el-dropdown-item>
+      <Basket
+        v-if="basket.length"
+        :show="state.showBasket"
+        @close="state.showBasket = false"
+        @updateFromBasket="updateFromBasket"
+        class="mr-3"
+      />
 
-          <el-dropdown-item
-            v-if="orders.length > 0"
-            :hide-on-click="true"
-            command="showOrders"
-          >
-            <Orders
-              :show="state.showOrders"
-              :update-from-basket="state.isUpdateFromBasket"
-              @close="state.showOrders = false"
-              @resetBasketUpdate="state.isUpdateFromBasket = false"
-            />
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </el-dropdown>
+      <Orders
+        v-if="orders.length"
+        :show="state.showOrders"
+        :update-from-basket="state.isUpdateFromBasket"
+        @close="state.showOrders = false"
+        @resetBasketUpdate="state.isUpdateFromBasket = false"
+        class="mr-3"
+      />
+      
+
+
 
       <!-- МЕНЮ ДЕЙСТВИЙ -->
       <el-dropdown trigger="click" :hide-on-click="false">
@@ -138,16 +127,8 @@
             />
           </el-dropdown-item>
           <el-dropdown-item>
-            <!-- Экспорт -->
-            <!-- <download-excel
-              v-if="marketTable"
-              :fields="headersToObject(selectedHeaders)"
-              :data="marketTable?.value?.data"
-              :name="exportFileName"
-            >
-              Экспорт в Excel
-            </download-excel> -->
 
+            <!-- Экспорт -->
             <ExportExcel
               :list="state.filteredTableData"
               type="plain"
@@ -288,7 +269,7 @@
 
 <script setup>
 
-  import { computed, ref, reactive, watch, onBeforeMount, onBeforeUnmount, onMounted, nextTick } from 'vue'
+  import Vue, { computed, ref, reactive, watch, onBeforeMount, onBeforeUnmount, onMounted, nextTick } from 'vue'
   import store from '@/store'
   import router from '@/router' 
   import variables from '@/styles/variables.scss'
@@ -305,6 +286,8 @@
   import { getElementType, isPartsInElement, setTHInElement, showElementTypeDialogItems,
     showSomeDialogItems, hideSomeDialogItems, calcStockPrice, calcClientPrice, calcPartnerPrice, calcOptPrice } from './utils.js'
 
+  import { filterHandler } from '@/workers/filters.js'
+ 
 
   import Dialog from '@/components/Dialog'
   import Pagination from '@/components/Pagination'
@@ -366,10 +349,14 @@
     variables
   })
 
+
   const confirm_with_count = ref('');
   const dialogForm = ref('');
 
   const marketTable = ref(null);
+
+    // const Edit = computed(() => new AclRule('admin').or('nom').generate())
+  // const userRole = computed(() => this.$store.getters.userRole || 'user')
 
   const selectedHeaders = computed(() => state.tableHeaders.filter(header => header.selected));
   const market = computed(() => store.getters['market_new/market']);
@@ -390,44 +377,56 @@
   const orders = computed(() => store.state.market.Orders)
   const basket = computed(() => store.state.market.Basket)
 
-  // const Edit = computed(() => new AclRule('admin').or('nom').generate())
-  // const userRole = computed(() => this.$store.getters.userRole || 'user')
+
 
   watch(() => state.filteredTableData, () => {
     getPaginationData()
   }, { deep: true, immediate: true })
 
+
+
   watch(() => state.total, async (val) => {
     if (val > 0) {
-      console.log('VAL', val)
       await getDataForDialog();
-      await setFormattersForOptions();
+      setFormattersForOptions();
+
       if (!basket.value?.length) store.dispatch('getBasket');
       if (!orders.value?.length) store.dispatch('getOrders');
     }
   })
 
+
+
   onBeforeMount(async() => {
     state.WindowHeight = window.innerHeight - 190
     state.tableHeaders = await createHeaders(state.templateHeaders)
+
+    state.filters = JSON.parse(localStorage.getItem(state.reference)) || {};
+
   })
+
+
 
   onMounted(async() => {
     console.time('Компонент создавался: ');
     if (!MarketImg?.value.length) store.dispatch('getMarketImg');
-    if (!market.value.length) await store.dispatch('market_new/get');
+    if (!market?.value.length) await store.dispatch('market_new/get');
 
     if (!state.tableData?.length) getData();
-
     init();
-    console.timeEnd('Компонент создавался: ');
 
-    console.log(marketTable)
+
+    updateData();
+    console.timeEnd('Компонент создавался: ');
   })
+
+
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', state.setScreenHeight);
   })
+
+
   
 
   // ********************************************* МЕТОДЫ *************************************************** //
@@ -438,7 +437,7 @@
         const id = window.location.hash.replace(/[^0-9]/gim, '')
         state.filters['marketID'] = id
       }
-      state.maxWidth = localStorage.getItem('sizeColName')
+      state.maxWidth = localStorage.getItem('sizeColName');
 
     }
 
@@ -458,15 +457,19 @@
       console.time('Загрузка Маркета: ');
       const photoColumn = state.tableHeaders.find(header => header.value === 'marketPHOTO');
       
-      state.tableData = market?.value.map(el => ({
+      state.tableData = market?.value?.map(el => ({
         ... el,
+        elementTYPE: getElementType(el.elementTYPE),
+        marketEMAIL: getUserName(el.marketEMAIL),
+        marketPARTS: isPartsInElement(el.marketPARTS),
         marketTH: setTHInElement(el, state.TechProperties),
         marketPHOTO: photoColumn?.selected ? setPhotoToElement(el) : null
       }));
 
-
       state.TechProperties = createTechProps();
       console.timeEnd('Загрузка Маркета: ');
+
+      //console.log('tate.tableData', state.tableData)
     }
 
 
@@ -501,14 +504,15 @@
     }
 
     function setFormattersForOptions() {
+
       state.formatters = [
         { name: 'marketPHOTO' },
         { name: 'marketTYPE' },
         { name: 'marketCOND' },
+        { name: 'elementTYPE' },
         { name: 'marketSUPPLIER' },
-        { name: 'marketEMAIL', formatter: getUserName },
-        { name: 'elementTYPE', formatter: getElementType },
-        { name: 'marketPARTS', formatter: isPartsInElement },
+        { name: 'marketEMAIL', },
+        { name: 'marketPARTS' },
         { name: 'marketMODELS', prop: 'MODEL' }
       ]
 
@@ -519,7 +523,7 @@
 
       state.AllTypes = [...ModelsType.value.map(i => ({ ...i, element: 2 })), ...ProductsType.value.map(i => ({ ...i, element: 1 }))]
 
-      console.log(state.filtersOptions)
+
     }
 
     /**
@@ -532,26 +536,19 @@
           ? new Date(cellValue).toLocaleDateString('ru')
           : null
       }
-      if (column.property === 'marketEMAIL') {
-        return cellValue
-          ? getUserName(cellValue)
-          : null
-      }
+
       if (column.property === 'marketPRICE') {
         return cellValue
           ? cellValue + ' ' + row.CUR
           : null
       }
+
       if (column.property === 'marketSITE') {
         return (cellValue > 0
           ? '*'
           : null)
       }
-      if (column.property === 'elementTYPE') {
-        return cellValue
-          ? getElementType(cellValue)
-          : null
-      }
+
       if (column.property === 'marketIMAddress') {
         return cellValue === '0 0 0'
           ? ''
@@ -632,7 +629,6 @@
           displayName: getUserName(item.EMAIL),
         }
 
-        console.log(state.editedItem)
 
       applyCalculatedPrices(state.editedItem)
     }
@@ -664,28 +660,55 @@
       state.total = state.filteredTableData.length
     }
 
-    function updateData(data) {
-      state.filteredTableData = data || state.tableData
+
+
+    function updateData() {
+
+      /* function replacer(key, value) {
+        if (typeof value === 'function') {
+          return value.toString()
+        }
+        return value;
+      } */
+
+      Vue.prototype.$worker
+        .run(filterHandler , [JSON.stringify(state.filters), JSON.stringify(state.tableData), JSON.stringify(state.formatters)])
+        .then(res => {
+          state.filteredTableData = (res || state.tableData)
+          localStorage.setItem(state.reference, JSON.stringify(state.filters))
+        })
+        .catch(console.error)
+
     }
+
+
 
     function updateFilters(val) {
       if (val) state.filters = { ...val }
     }
 
+
+
     function resetFilters() {
       state.filters = {}
-      updateData()
+      state.filteredTableData = state.tableData
     }
+
+
 
     function editTechProps(item) {
       state.dialogTechProps = true
       state.editedItem = { ...item }
     }
 
+
+
     function setPhotoToElement(tableRow) {
         const image = MarketImg.value.find(item => +item.id === tableRow.marketid);
         return image?.url || null
     }
+
+
 
     async function getPartsForModel(modelID) {
       const res = await getMarketParts({ id: modelID })
@@ -698,13 +721,19 @@
       })
     }
 
+
+
     function setType(val) {
       if (val) state.filters.searchMarketType = val.name
     }
 
+
+
     function setTpFilter(val) {
       state.filters.searchMarketTH = val
     }
+
+
 
     function resetTpFilter() {
       state.filters.searchMarketTH = []
@@ -733,16 +762,19 @@
       state.dialog = false
     }
 
+
     /*  =====================================  ЗАКАЗЫ  ======================================   */
 
-    function handleCommandOrders(command) {
+    /* function handleCommandOrders(command) {
       if (command === 'showBasket') state.showBasket = true
       if (command === 'showOrders') state.showOrders = true
-    }
+    } */
+
 
     function updateFromBasket(val) {
       state.isUpdateFromBasket = val
     }
+
 
     async function openBasketDialog(item) {
       if (item.marketPRICE && item.marketPRICE !== 0) {
@@ -755,6 +787,10 @@
         store.commit('setInfo', 'Товар не имеет цены! Добавление не может быть продолжено.')
       }
     }
+
+
+
+
     function addItemToBasket(data) {
       const marketBasket = JSON.parse(localStorage.getItem('marketBasket'))
 
@@ -770,6 +806,8 @@
         store.dispatch('setBasket', { CurrentOrder: state.CurrentOrder })
       }
     }
+
+
 
     /* ========================================== Добавление позиции Маркета ================================================= */
 

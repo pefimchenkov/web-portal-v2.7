@@ -39,6 +39,8 @@ const templateHeaders = [
   { text: 'Оплаты', value: 'paid', sortable: 'custom' },
   { text: 'Строки выписки', value: 'stroki', sortable: 'custom' },
   { text: 'Счета', value: 'bills', sortable: 'custom' },
+  { text: 'Период расходов', value: 'expense_period', sortable: 'custom', width: 185 },
+  { text: 'Подразделение', value: 'subdivision', sortable: 'custom', width: 200 },
   { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, fixed: 'right' }
 ]
 

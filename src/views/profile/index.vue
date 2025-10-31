@@ -58,14 +58,14 @@ export default {
     ...mapState({ info: state => state.user.info }),
 
     currentJiraUser() {
-      return this.jira_users.find(u => u.email === this.user.email)
+      return this.jira_users.find(u => u.email === this.user.email);
     }
 
   },
 
   async created() {
     await this.getUser()
-    await this.$store.dispatch('getUserInfo')
+    await this.$store.dispatch('getUserInfo');
   },
 
   methods: {

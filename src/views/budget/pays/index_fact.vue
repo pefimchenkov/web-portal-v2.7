@@ -111,7 +111,7 @@
       :prop="column.value"
       :label="column.text"
       :align="column.align || (textCenter ? 'center' : 'left')"
-      :width="column.width"
+      :min-width="column.width"
       :fixed="column.fixed"
       :resizable="column.resizable"
       show-overflow-tooltip
@@ -189,8 +189,11 @@
   import { updateOutgoingPayments } from '@/api/1c/atlas_1c.js'
   import { mapState } from 'vuex'
 
-export default {
-  filters: {
+  import { filterHandler } from '@/workers/filters.js'
+
+  export default {
+
+    filters: {
       parseTime,
       getUserName
     },
@@ -279,6 +282,7 @@ export default {
   
     beforeMount() {
       this.WindowHeight = window.innerHeight - 220;
+      this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
     },
   
     mounted() {
@@ -345,6 +349,11 @@ export default {
       ]
       this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters })
       
+       /* Web Worker для фильтров */
+    
+        this.updateData();
+
+      /* *********************** */
   
     },
   
@@ -366,17 +375,23 @@ export default {
         this.filteredTableData = this.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
       },
   
-      updateData(data) {
-        this.filteredTableData = data || this.tableData
+      updateData() {
+        this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+          .then(res => {
+            this.filteredTableData = (res || this.tableData)
+            localStorage.setItem(this.reference, JSON.stringify(this.filters))
+          })
+          .catch(console.error)
       },
+
   
       updateFilters(val) {
         if (val) this.filters = { ...val }
       },
   
       resetFilters() {
-        this.filters = {}
-        this.updateData()
+        this.filters = {};
+        this.updateData();
       },
   
       addItem() {

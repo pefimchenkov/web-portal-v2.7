@@ -41,6 +41,7 @@
 
     computed: {
       total() {
+        if (!this.Balances.length) return [];
         return this.Balances.reduce((acc, { balance }) => (acc + balance), 0);
       }
     }

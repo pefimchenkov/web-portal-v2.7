@@ -6,7 +6,12 @@
 
     <div class="user-profile">
       <div class="box-center">
-        <pan-thumb :image="user.avatar" :height="'150px'" :width="'150px'" :hoverable="false">
+        <pan-thumb
+          :image="jiraAvatar"
+          :height="'150px'"
+          :width="'150px'"
+          :hoverable="false"
+        >
           <div>Привет</div>
           {{ user.role }}
         </pan-thumb>
@@ -81,9 +86,13 @@ export default {
 
   computed: {
 
-    photo() {
+    jiraAvatar() {
       return `http://support.atlas-pro24.local/secure/useravatar?ownerId=${this.currentJiraUser.user_name}`
     }
+
+  },
+
+  methods: {
 
   }
 }

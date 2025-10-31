@@ -20,11 +20,13 @@ export function calcOptPrice(data) {
 export function getElementType(id) {
   return elementTypes.find(i => i.id === id)?.name
 }
+
 export function isPartsInElement(count) {
   return count > 0
     ? 'есть'
     : 'нет'
 }
+
 export function setTHInElement(row, data) {
   if (!data.length) return
   const ids = data.find(i => i.zip === row.marketid)?.ids
@@ -32,6 +34,7 @@ export function setTHInElement(row, data) {
     ? ids.join(', ')
     : null
 }
+
 export function showElementTypeDialogItems(data, value) {
   if (!value) {
     const elementNames = elementTypes.map(i => i.name)

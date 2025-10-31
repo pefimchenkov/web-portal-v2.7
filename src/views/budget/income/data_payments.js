@@ -48,7 +48,7 @@ const profits_partner = [
 
 
 const templateHeaders = [
-  { text: 'Клиент', value: 'contractorName', sortable: 'custom', width: 300, fixed: 'left' },
+  { text: 'Клиент', value: 'contractorName', sortable: 'custom', width: 300,},
   { text: 'JIRA', value: 'iKey', sortable: 'custom', align: 'left', width: 145, formatter: JiraLink },
   { text: 'Проект 1С', value: 'project', sortable: 'custom', width: 155 },
 
@@ -63,7 +63,7 @@ const templateHeaders = [
   { text: 'Взаимозачёт', value: 'netting', sortable: 'custom' },
   { text: 'ОМ', value: 'om', sortable: 'custom', width: 205, },
   { text: 'СМ', value: 'sm', sortable: 'custom', width: 205, },
-  { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, fixed: 'right' }
+  { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, }
 ]
 
 const dialogItems = [

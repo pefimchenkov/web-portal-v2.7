@@ -71,25 +71,6 @@
             />
           </el-select>
 
-          <el-skeleton-item
-            v-if="!models.length"
-            variant="text"
-            style="width: 30%; height: 20px; margin: 0 10px"
-          />
-          <el-select
-            v-else
-            v-model="filters.models"
-            class="mr-2"
-            collapse-tags
-            clearable
-            filterable
-            multiple
-            size="mini"
-            placeholder="Модели"
-            style="min-width: 120px;"
-          >
-            <el-option v-for="item in filteredModels" :key="item?.ID" :value="item?.MODEL" />
-          </el-select>
           <el-select
             v-model="filters.type"
             class="mr-2"
@@ -130,10 +111,6 @@ export default {
       type: Array,
       default: () => [],
     },
-    models: {
-      type: Array,
-      default: () => [],
-    },
     engineers: {
       type: Array,
       default: () => [],
@@ -164,9 +141,7 @@ export default {
     filteredClients() {
       return this.clients.filter(client => client)
     },
-    filteredModels() {
-      return this.models.filter(model => model)
-    },
+
   },
 
   methods: {
@@ -174,21 +149,18 @@ export default {
       if (counter === 0) {
         this.filters.period = null;
         this.filters.clients = [];
-        this.filters.models = [];
         this.filters.engineer = null;
         this.filters.type = null;
       }
       const client_ids = this.filters.clients.map(
         (name) => this.clients.find((i) => i?.NAME === name)?.ID
       );
-      const model_ids = this.filters.models.map(
-        (name) => this.models.find((i) => i?.MODEL === name)?.ID
-      );
+
       const engineer = this.engineers.find(
         (user) => user?.display_name === this.filters.engineer
       )?.user_name;
 
-      this.$emit("getData", { models: model_ids, clients: client_ids, engineer, type: this.filters.type, period: this.filters.period?.value, period_number: this.filters.period?.id });
+      this.$emit("getData", { clients: client_ids, engineer, type: this.filters.type, period: this.filters.period?.value, period_number: this.filters.period?.id });
       this.counter = counter;
     },
   },

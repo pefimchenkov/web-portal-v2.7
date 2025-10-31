@@ -1,34 +1,27 @@
 <template>
-  <v-container>
+  <div>
     <Confirm ref="confirm" />
 
-    <v-dialog
-      v-model="dialog"
-      fullscreen
-      hide-overlay
-      transition="dialog-bottom-transition"
-      @click.native.stop
+    <el-button
+      icon="el-icon-s-goods"
+      size="mini"
+      @click="selectBasket"
     >
-      <template #activator="{ on }">
-        <span v-on="on">Корзина</span>
-      </template>
+      Корзина
+    </el-button>
 
-      <v-card>
-        <v-toolbar dark style="background: #054a8f">
-          <v-btn text @click="removeBasket">
-            <v-icon>mdi-delete</v-icon>Очистить корзину
-          </v-btn>
-          <v-spacer />
+    <el-dialog
+      :title="`Корзина ${BasketType.name}`"
+      :visible.sync="dialog"
+      width="95%"
+      :close-on-click-modal="false"
+      append-to-body>
 
-          <v-btn text @click="dialog = false">
-            <v-icon>mdi-close</v-icon>Закрыть
-          </v-btn>
-        </v-toolbar>
 
         <el-container style="margin: 10px; padding: 10px">
           <el-row align="middle" justify="center" :gutter="20"
+            :style="{ 'background': BasketType.value === 'sale' ? 'lightblue' : '#e6d8ad' }"
             style="
-              background: lightblue !important;
               border-radius: 10px;
               margin-top: 20px auto !important;
               padding: 10px;
@@ -36,16 +29,8 @@
           >
             <el-col :span="18">
               <v-row>
-                <v-col
-                  cols="12"
-                  style="
-                    line-height: 1.5em;
-                    font-size: 22px;
-                    padding: 10px;
-                    color: #000;
-                  "
-                >Корзина</v-col>
-                <v-col cols="5">
+
+                <v-col :cols="BasketType.value === 'purchase' ? 12 : 6">
                   <el-card>
                     <v-text-field
                       v-model="Comment"
@@ -57,7 +42,10 @@
                     />
                   </el-card>
                 </v-col>
-                <v-col cols="3">
+
+                <v-col
+                  v-if="BasketType.value === 'sale'"
+                  cols="6">
                   <el-card>
                     <v-select
                       v-model="price_type"
@@ -70,19 +58,7 @@
                     />
                   </el-card>
                 </v-col>
-                <v-col cols="4">
-                  <el-card>
-                    <v-select
-                      v-model="firm"
-                      :items="firms"
-                      item-text="name"
-                      hide-details
-                      return-object
-                      label="Фирма исполнитель *"
-                      style="padding: 10px"
-                    />
-                  </el-card>
-                </v-col>
+
                 <v-col cols="12">
 
                   <!-- ТАБЛИЦА ТОВАРОВ В КОРЗИНЕ -->
@@ -318,16 +294,16 @@
                       icon="el-icon-s-goods"
                       @click="addToOrder"
                     >
-                      РАЗМЕСТИТЬ
+                      Создать {{ BasketType.name }}
                     </el-button></v-col>
                 </v-row>
               </el-card>
             </el-col>
           </el-row>
         </el-container>
-      </v-card>
-    </v-dialog>
-  </v-container>
+      
+    </el-dialog>
+  </div>
 </template>
 
 <script>
@@ -352,13 +328,22 @@ export default {
     return {
       dialog: false,
       BasketItems: [],
+      BasketType: {
+        name: 'продажи',
+        value: 'sale'
+      },
       Comment: '',
       fullOrderDiscount: null,
       price_type: { id: 1, name: 'Стандартная', value: 1 },
+      vendor: null,
       manual_price: 0,
-      firm: null,
+      firm: {
+        id: 990,
+        name: "Атлас Про"
+      },
       key: 0,
       json_fields: {},
+      text: 'продаж',
 
       prices: [
         { id: 1, name: 'Стандартная', value: 1 },
@@ -366,10 +351,6 @@ export default {
         { id: 3, name: 'Оптовая', value: 0.8 }
       ],
 
-      firms: [
-        { id: 429, name: 'ТСД Сервис' },
-        { id: 990, name: 'Атлас Про' }
-      ],
 
       headers: [
         { text: 'Макет ID', value: 'marketid', selected: true, divider: true },
@@ -381,7 +362,7 @@ export default {
         },
         { text: 'Тип', value: 'marketTYPE', selected: true, divider: true },
         { text: 'Артикул', value: 'marketART', selected: true, divider: true },
-        { text: 'Кол-во', value: 'Count', selected: true, width: 70, divider: true },
+        { text: 'Кол-во', value: 'Count', selected: true, width: 80, divider: true },
         { text: 'Себ1сА', value: 'sebA', selected: true, divider: true },
         { text: 'Себ1сТ', value: 'sebT', selected: true, divider: true },
         {
@@ -425,6 +406,10 @@ export default {
     }
   },
 
+
+
+
+
   computed: {
     ...mapState({
       Market: (state) => state.market.market,
@@ -450,6 +435,10 @@ export default {
       )
     }
   },
+
+
+
+
 
   watch: {
     show(val) {
@@ -481,7 +470,32 @@ export default {
     this.setup()
   },
 
+
+
+
+
+
   methods: {
+    selectBasket() {
+      this.$confirm('', 'Выберите тип корзины: ', {
+        confirmButtonText: 'Продажа',
+        cancelButtonText: 'Закупка',
+        confirmButtonClass: 'confirm-button',
+        center: true
+      })
+        .then(() => {
+          this.BasketType.value = 'sale';
+          this.BasketType.name = 'продажи';
+          this.dialog = true;
+        })
+        .catch(() => {
+          this.BasketType.value = 'purchase';
+          this.BasketType.name = 'закупки';
+          this.dialog = true;
+        })
+    },
+
+
     setup() {
       const marketInBasket = this.Market?.filter((item) => this.CurrentBasket.find((basket) => +basket.marketid === +item.marketid))
       console.log('Товары в корзине: ', marketInBasket)
@@ -578,9 +592,13 @@ export default {
       this.$store.dispatch('delFromBasket', id)
     },
 
+
+
+
     addToOrder() {
-      if (this.firm) {
+
         const dataToLS = {
+          type: this.BasketType.value,
           headers: this.computedHeaders,
           order: this.CurrentBasket,
           comment: this.Comment,
@@ -592,6 +610,7 @@ export default {
         }
 
         const dataToDb = {
+          type: this.BasketType.value,
           order: this.CurrentBasket,
           comment: this.Comment,
           price_type: this.price_type,
@@ -606,15 +625,12 @@ export default {
           this.$store.dispatch('saveOrders', dataToLS) // сохраняем в LocalStorage
           this.dialog = false
         })
+
         // нужно причесать позже response (тут есть affectedRows = 1)
-      } else {
-        this.$notify({
-          message: 'Не выбрана фирма исполнитель!',
-          type: 'error',
-          duration: 3000
-        })
-      }
     },
+
+
+
 
     async removeBasket() {
       if (
@@ -632,7 +648,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+
 .v-data-table {
   text-align: left !important;
 }
+
+
+
 </style>

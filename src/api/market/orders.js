@@ -54,6 +54,11 @@ export function updateParts(data) {
 
   })
 }
+
+
+
+
+
 export function createSale(data) {
   return request({
 
@@ -85,6 +90,35 @@ export function remove(data) {
   return request({
 
     url: '/market/orders',
+    method: 'delete',
+    data
+
+  })
+}
+
+
+export function createPurchase(data) {
+  return request({
+
+    url: '/market/orders/purchase',
+    method: 'post',
+    data
+
+  })
+}
+export function linkPurchase(data) {
+  return request({
+
+    url: '/market/orders/purchase',
+    method: 'put',
+    data
+
+  })
+}
+export function unlinkPurchase(data) {
+  return request({
+
+    url: '/market/orders/purchase',
     method: 'delete',
     data
 

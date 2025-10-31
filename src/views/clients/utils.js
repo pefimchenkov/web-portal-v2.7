@@ -28,9 +28,9 @@ function filterDataForUpdate(item) {
     NAME: item.NAME,
     LP_TYPE: item.LP_TYPE,
     LP_NAME: item.LP_NAME,
-    LEGPERS_ATLAS: item.LEGPERS_ATLAS,
     ART_1C: item.ART_1C,
     PROJECT: item.PROJECT,
+    EDO: !!item.EDO,
     ID: item.ID
   }
 }

@@ -28,12 +28,12 @@ const project_short = ['КЛ', 'ПАР', 'ДИС', 'Пос', 'Инв', 'Инд']
 const dialogItems = [
   {
     type: 'customInput',
-    label: 'Бренд',
+    label: 'Наименование',
     value: 'NAME',
     visible: true,
     rules: {
       required: true,
-      length: [3, 25]
+      length: [3, 35]
     }
   },
   {
@@ -57,15 +57,6 @@ const dialogItems = [
   },
   {
     type: 'customInput',
-    label: 'Юрлицо Атлас',
-    value: 'LEGPERS_ATLAS',
-    visible: true,
-    rules: {
-      required: false
-    }
-  },
-  {
-    type: 'customInput',
     label: 'Код Юрлица по 1С',
     value: 'ART_1C',
     visible: true,
@@ -82,6 +73,15 @@ const dialogItems = [
     options: projects.map(i => i.PROJECT),
     rules: {
       required: true
+    }
+  },
+  {
+    type: 'customCheckbox',
+    label: 'ЭДО',
+    value: 'EDO',
+    visible: true,
+    rules: {
+      required: false
     }
   },
 ]
@@ -110,6 +110,7 @@ const templateHeaders = [
   { text: 'ОМ IT', value: 'OM_IT' },
   { text: 'Тип', value: 'PROJECT' },
   { text: 'Статус CRM', value: 'CRM', align: 'center' },
+  { text: 'ЭДО', value: 'EDO', align: 'center' },
   { text: 'Jira', value: 'Jira' },
   { text: 'Действия', value: 'actions', align: 'center' },
 ]

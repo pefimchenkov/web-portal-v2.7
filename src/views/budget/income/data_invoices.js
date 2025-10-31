@@ -27,7 +27,7 @@ const actions = [
 
 const templateHeaders = [
   { text: 'ID', value: 'id', sortable: 'custom', width: 60, },
-  { text: 'Клиент', value: 'contractorName', sortable: 'custom', width: 300, fixed: 'left' },
+  { text: 'Клиент', value: 'contractorName', sortable: 'custom', width: 300, },
   { text: 'JIRA', value: 'iKey', sortable: 'custom', align: 'left', width: 155, formatter: JiraLink },
   { text: 'Проект 1С', value: 'project', sortable: 'custom', width: 155, formatter: BudgetInvoiceManualSelect },
   { text: 'Примечание', value: 'comment', sortable: 'custom', align: 'left', width: 145, formatter: JiraLink },
@@ -52,7 +52,7 @@ const templateHeaders = [
   { text: 'ОМ', value: 'om', sortable: 'custom', width: 155, },
   { text: 'СМ', value: 'sm', sortable: 'custom', width: 155, },
   { text: 'Статус счёта', value: 'num_status', sortable: 'custom', align: 'center', formatter: BudgetInvoiceStatus, },
-  { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, fixed: 'right' }
+  { text: 'Действия', value: 'actions', width: 90, align: 'center', formatter: Actions, actions: actions, }
 ]
 
 const dialogItems = [

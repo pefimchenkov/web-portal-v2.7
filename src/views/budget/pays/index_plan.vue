@@ -133,9 +133,9 @@
           :types="{
             Input: ['isummary', 'pp', 'pplp', 'ikey',],
             MultiSelect: ['firma', 'ci'],
-            Select: ['currency', 'istatus', 'forma'],
+            Select: ['currency', 'istatus', 'forma', 'subdivision'],
             CheckBox: ['sum', 'stroki', 'total', 'bills'],
-            Date: ['created', 'date_plan', 'date_crit'],
+            Date: ['created', 'date_plan', 'date_crit', 'expense_period'],
             Clear: ['actions']
           }"
           :formatters="formatters"
@@ -188,6 +188,8 @@
 
   import { /* updateOutgoingPayments */ } from '@/api/1c/atlas_1c.js'
   import { mapState } from 'vuex'
+
+  import { filterHandler } from '@/workers/filters.js'
   
 
 export default {
@@ -278,6 +280,7 @@ export default {
   
     beforeMount() {
       this.WindowHeight = window.innerHeight - 220;
+      this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
     },
   
     mounted() {
@@ -337,10 +340,16 @@ export default {
         { name: 'forma' },
         { name: 'firma' },
         { name: 'ci' },
+        { name: 'subdivision' },
       ]
       this.filtersOptions = createSelectOptionsFromTableData({ data: this.tableData, columns: this.formatters })
       
-      console.log('this.tableData', this.tableData)
+
+      /* Web Worker для фильтров */
+    
+      this.updateData();
+
+      /* *********************** */
   
     },
   
@@ -362,10 +371,15 @@ export default {
         this.filteredTableData = this.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
       },
   
-      updateData(data) {
-        this.filteredTableData = data || this.tableData
+      updateData() {
+        this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+          .then(res => {
+            this.filteredTableData = (res || this.tableData)
+            localStorage.setItem(this.reference, JSON.stringify(this.filters))
+          })
+          .catch(console.error)
       },
-  
+
       updateFilters(val) {
         if (val) this.filters = { ...val }
       },
@@ -553,7 +567,7 @@ export default {
 
        /* ======== Форматирование входных данных ======== */
        formatterData(row, column, cellValue) {
-        if (column.property === 'created' || column.property === 'date_plan' || column.property === 'date_crit' ) {
+        if (column.property === 'created' || column.property === 'date_plan' || column.property === 'date_crit' || column.property === 'expense_period' ) {
           return cellValue ? new Date(cellValue).toLocaleDateString('ru') : null;
         }
   

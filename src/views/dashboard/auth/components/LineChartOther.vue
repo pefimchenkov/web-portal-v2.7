@@ -81,7 +81,7 @@ export default {
       this.chart.setOption(
         {
           title : {
-            text:"Остальные",
+            text:"Ремонт остальные",
             x:'right'
           },
           xAxis: {

@@ -12,6 +12,7 @@
       <v-divider class="mx-3" inset vertical />
 
       <!-- Внешний фильтр (remote, from api) -->
+
       <OuterFilter
         :periods="periods"
         :clients="state.Clients"
@@ -50,14 +51,22 @@
           </el-dropdown-item>
           <el-dropdown-item>
             <!-- ЭКСПОРТ -->
-            <download-excel
+            <ExportExcel
+              :list="state.filteredTableData"
+              type="plain"
+              :header="selectedHeaders.map(header => header.value)"
+              :ru-header="selectedHeaders.map(header => header.text)"
+              :table-name="exportFileName"
+            />
+
+            <!-- <download-excel
               v-if="$refs[`${props.firm.reference}`]"
               :fields="headersToObject(selectedHeaders)"
               :data="$refs[`${props.firm.reference}`].$children[0].filteredItems"
               :name="exportFileName"
             >
               Экспорт в Excel
-            </download-excel>
+            </download-excel> -->
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
@@ -117,6 +126,7 @@
         <!-- Заголовок таблицы -->
         <template slot="header" slot-scope="scope">
           <div style="word-break: keep-all;">{{ column.text }}</div>
+
           <TableFilters
             v-if="state.tableData.length"
             :key="props.firm.id"
@@ -136,6 +146,7 @@
             @updateFilters="updateFilters"
             @resetFilters="resetFilters"
           />
+
         </template>
 
       </el-table-column>
@@ -159,7 +170,7 @@ import { getMinimunBalance, getBalancePercent, getCurrentNeed, getRemonts, getTo
 
 import { splitStringByComma } from '@/utils'
 import { jira_url, jira_jql } from '@/settings.js'
-import { getExpendedZip, getFiltersForExpendedZip, insertSalesReportToDB } from '@/api/zip/expended.js'
+import { getExpendedZip, getCurrentNeedForExpendedZip, getFiltersForExpendedZip, insertSalesReportToDB } from '@/api/zip/expended.js'
 import { createHeaders, setRemoteCustomSort, headersToObject, getSummariesRow } from '@/components/DataTable/utils.js'
 
 import TableColumns from '@/components/DataTable/columns.vue'
@@ -167,8 +178,11 @@ import TableFilters from '@/components/TableFilters/index.vue'
 import TableOptions from '@/components/TableOptions/index.vue'
 import OuterFilter from './components/outer_filter.vue'
 import Pagination from '@/components/Pagination'
+import ExportExcel from '@/components/ExportExcel'
 
-import { computed, reactive, watch, onBeforeMount, onMounted, nextTick } from 'vue'
+import { filterHandler } from '@/workers/filters.js'
+
+import Vue, { computed, reactive, watch, onBeforeMount, onMounted, nextTick } from 'vue'
 import store from '@/store'
 
   const props = defineProps({
@@ -221,7 +235,8 @@ import store from '@/store'
     getPaginationData()
   }, { deep: true, immediate: true })
 
-  watch(() => state.tableData, () => {
+  watch(() => state.tableData, async () => {
+
     state.filters['commonCurrentNeed'] = [0, maxRangeCommonCurrentNeed()]
     state.filters['commonToOrder'] = [0, maxRangeCommonToOrder()],
     state.filters['Total'] = [0, maxRangeTotal()]
@@ -231,22 +246,27 @@ import store from '@/store'
     return state.tableHeaders.filter(header => header.selected)
   })
 
-  onBeforeMount(() => {
-    state.WindowHeight = window.innerHeight - 270
+  onBeforeMount(async () => {
+    state.WindowHeight = window.innerHeight - 270;
+
+    await store.dispatch('models/models');
+    await store.dispatch('clients/getClients');
+    await store.dispatch('fetchJiraUsers');
   })
 
   onMounted(async() => {
     state.loading = true
-    window.addEventListener('resize', getWindowHeight)
-    state.tableHeaders = createHeaders(state.templateHeaders)
+    window.addEventListener('resize', getWindowHeight);
+    state.tableHeaders = createHeaders(state.templateHeaders);
 
-    clearFiltersInLocalStorage(props.firm.reference, ['commonCurrentNeed', 'commonToOrder', 'Total'])
+    clearFiltersInLocalStorage(props.firm.reference, ['commonCurrentNeed', 'commonToOrder', 'Total']);
+    await getData();
 
-    await store.dispatch('models/models')
-    await store.dispatch('clients/getClients')
-    await store.dispatch('fetchJiraUsers')
-    await getData({ firm: props.firm.id })
-    await getOutwardFilters()
+    nextTick(() => {
+      getOutwardFilters();
+    })
+
+    //
 
     state.commonToOrder = state.tableData.map(item => {
       return { id: item.Zip_ID, qty: getToOrder(item) }
@@ -261,42 +281,46 @@ import store from '@/store'
   async function getData(data) {
       console.time('Получаем расходуемый ЗИП: ')
       if (!state.loading) state.loading = true
-      state.tableData = state.filteredTableData = state.paginatedTableData = []
-      const dataPlusFirm = { ...data, firm: props.firm.id }
+      state.tableData = state.filteredTableData = state.paginatedTableData = [];
 
-      console.log(data)
+
+
       if (data?.type === 'sale') {
-        await getSalesReport(data)
-        await setSalesReportToDB()
+        await getSalesReport(data);
+        await setSalesReportToDB();
       }
+      
+      Promise.all([getExpendedZip(data), getCurrentNeedForExpendedZip(data)])
+        .then(([mainData, totalCurrentNeed]) => {
+          if (!mainData?.length) {
+            state.loading = false;
+            return
+          }
 
-      nextTick(async() => {
-        await getExpendedZip(dataPlusFirm)
-          .then(res => {
-          console.log(res)
-          if (!res.expendedZip.length) return
-              state.tableData = state.filteredTableData = res.expendedZip.map(obj => {
-              return {
-                ...obj,
-                currentNeed: getCurrentNeed(obj, res.currentNeed.length ? res.currentNeed : res.totalCurrentNeed),
-                Remonts: getRemonts(obj, res.currentNeed.length ? res.currentNeed : res.totalCurrentNeed),
-                commonCurrentNeed: getCommonCurrentNeed(obj, res.totalCurrentNeed),
-                percent: getBalancePercent(obj),
-                QtyM: getBalancePerMonth(obj, data.period_number),
-                Qmin: getMinimunBalance(obj, data.period_number),
-                toOrder: getToOrder(obj),
-                commonToOrder: getCommonToOrder(obj, state.commonToOrder),
-                SumPriceNeed: getSumPriceNeed(obj, res.currentNeed.length ? res.currentNeed : res.totalCurrentNeed, state.commonToOrder),
-                Total: getTotal(obj, res.currentNeed.length ? res.currentNeed : res.totalCurrentNeed, state.commonToOrder),
-              }
-            })
-
+          state.tableData = state.filteredTableData = mainData.map(obj => {
+            return {
+              ...obj,
+              currentNeed: getCurrentNeed(obj,  totalCurrentNeed),
+              Remonts: getRemonts(obj,  totalCurrentNeed),
+              commonCurrentNeed: getCommonCurrentNeed(obj, totalCurrentNeed),
+              percent: getBalancePercent(obj),
+              QtyM: getBalancePerMonth(obj, data?.period_number),
+              Qmin: getMinimunBalance(obj, data?.period_number),
+              toOrder: getToOrder(obj),
+              commonToOrder: getCommonToOrder(obj, state.commonToOrder),
+              SumPriceNeed: getSumPriceNeed(obj, totalCurrentNeed, state.commonToOrder),
+              Total: getTotal(obj, totalCurrentNeed, state.commonToOrder),
+            }
         })
-        .catch(e => console.log(e.message))
 
-      console.timeEnd('Получаем расходуемый ЗИП: ')
+      console.timeEnd('Получаем расходуемый ЗИП: ');
       state.loading = false
-      }, 100);
+        })
+        .catch(error => {
+          console.error('Ошибка получения данных: getExpendedZip, getCurrentNeedForExpendedZip', error);
+        });
+
+
   }
 
   async function getSalesReport(data) {
@@ -343,7 +367,7 @@ import store from '@/store'
   }
 
   async function getOutwardFilters() {
-    const outwardData = await getFiltersForExpendedZip()
+    const outwardData = await getFiltersForExpendedZip();
     
     const uniqModels = [... new Set(outwardData.map(i => Number(i.model)))]
     const uniqClients = [... new Set(outwardData.map(i => Number(i.client)))]
@@ -354,9 +378,21 @@ import store from '@/store'
     state.Engineers = uniqEngineers.map(eng => store.state.jira_users.JIRA_USERS.find(i => i.user_name === eng))
   }
 
-  function updateData(data) {
+  /* function updateData(data) {
     state.filteredTableData = data || state.tableData
-  }
+  } */
+
+  function updateData() {
+
+      Vue.prototype.$worker
+        .run(filterHandler , [JSON.stringify(state.filters), JSON.stringify(state.tableData), JSON.stringify(state.formatters)])
+        .then(res => {
+          state.filteredTableData = (res || state.tableData)
+          localStorage.setItem(state.reference, JSON.stringify(state.filters))
+        })
+        .catch(console.error)
+
+    }
 
   function updateFilters(val) {
     state.filters = { ...val }

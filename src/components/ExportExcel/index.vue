@@ -63,7 +63,7 @@
           .then(excel => {
             const data = this.formatJson(this.header, this.list);
 
-            console.log('Export2Excel', this.list)
+            //console.log('Export2Excel', this.list)
 
             excel.export_json_to_excel({
               header: this.ruHeader,
@@ -80,6 +80,11 @@
 
       formatJson(header, jsonData) {
         return jsonData.map(v => header.map(j => {
+
+          if (typeof v[j] === 'object') {
+            return v[j]?.data || v[j]?.value
+          }
+
           return isDate(v[j])
             ? ruDate(v[j])
             : v[j]

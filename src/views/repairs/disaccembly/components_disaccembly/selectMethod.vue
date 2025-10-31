@@ -35,7 +35,7 @@ defineProps({
 });
 
 function setSelectedMethod() {
-  emits("setSelectedMethod", method);
+  emits("setSelectedMethod", method.value);
 }
 </script>
 

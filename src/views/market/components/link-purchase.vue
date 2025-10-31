@@ -5,7 +5,7 @@
     max-width="900px"
     append-to-body
     top="30vh"
-    :title="`Привязать заказ № ${id} к SALE:`"
+    :title="`Привязать заказ № ${id} к ZAKUPKA:`"
     @close="close"
   >
 
@@ -16,20 +16,20 @@
 
           <el-row>
             <el-col :span="24">
-              <el-form-item prop="sale" :rules="[{ required: true, message: 'Обязательно!', trigger: 'blur' }]">
+              <el-form-item prop="purchase" :rules="[{ required: true, message: 'Обязательно!', trigger: 'blur' }]">
                 <el-select
-                  v-model="form.sale"
+                  v-model="form.purchase"
                   filterable
                   clearable
                   value-key="ID"
-                  placeholder="выберите SALE из списка"
+                  placeholder="выберите ZAKUPKA из списка"
                   style="width: 100%"
                 >
                   <el-option
-                    v-for="item in sales"
+                    v-for="item in purchases"
                     :key="item.ID"
                     :value="item"
-                    :label="setSaleName(item)"
+                    :label="setPurchaseName(item)"
                     :options="item"
                   >
                   </el-option>
@@ -45,7 +45,7 @@
       <div class="text-center" style="padding: 10px 0">
         <el-button
           type="success"
-          :disabled="Object.keys(form.sale).length === 0"
+          :disabled="Object.keys(form.purchase).length === 0"
           @click.native="save">
           Сохранить
         </el-button>
@@ -57,7 +57,7 @@
 
 <script>
 
-import { getSales, linkOrder } from '@/api/market/orders'
+import { getPurchases, linkOrder } from '@/api/market/orders'
 
 import { mapGetters } from 'vuex'
 
@@ -78,14 +78,14 @@ export default {
 
   data() {
     return {
-      sales: [],
+      purchases: [],
       dialogFormVisible: false,
       loading: false,
       search: '',
       disabled: false,
 
       form: {
-        sale: {}
+        purchase: {}
       },
 
       formLabelWidth: '130px'
@@ -108,11 +108,11 @@ export default {
       this.dialogFormVisible = val
       this.loading = true
 
-      if (!this.sales.length && val) {
-        getSales()
+      if (!this.purchases.length && val) {
+        getPurchases()
           .then(res => {
-            this.sales = [...res]
-            console.log(this.sales.length)
+            this.purchases = [...res]
+            console.log(this.purchases)
           })
       }
 
@@ -129,19 +129,19 @@ export default {
 
   methods: {
 
-    setSaleName(item) {
+    setPurchaseName(item) {
       return `${item.jkey} [${item.jstatus}] - ${item.SUMMARY || 'нет'} [${item.REPORTER}]`
     },
 
     close() {
-      this.sales = []
+      this.purchases = []
       this.$emit('closeDialog')
     },
 
     save() {
       this.$refs['form'].validate((valid) => {
         if (valid) {
-          linkOrder({ order: this.form.sale, id: this.id })
+          linkOrder({ order: this.form.purchase, id: this.id })
             .then(res => {
               this.close()
               this.$message({ type: 'success', message: res })

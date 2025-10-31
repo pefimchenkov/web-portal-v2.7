@@ -1,57 +1,112 @@
 <template>
   <v-container v-loading="loading" :style="`max-width: 1300px; ${loading ? 'height: 80vh' : ''}`">
-    <v-row v-show="!loading" justify="center" align="center">
-      <v-col cols="3">
-        <v-card v-if="Cash.length > 0" class="text-center title font-weight-bold">
 
+    <!-- Строка Меню -->
+
+    <v-row justify="center" align="center" style="margin-bottom: 2px">
+      <v-col cols="3">
+        <el-card
+          v-if="Cash.length > 0"
+          :body-style="{ 'padding': '1px' }"
+          class="text-center title font-weight-bold"
+        >
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <svg-icon icon-class="checkout" class-name="card-panel-icon" v-bind="attrs" v-on="on" />
+              <svg-icon
+                icon-class="checkout"
+                class-name="card-panel-icon"
+                v-bind="attrs"
+                v-on="on"
+                style="height: 30px"
+              />
             </template>
-            <span v-html="itemsDetails('cash', 5)" />
+            <span v-html="itemsDetails('cash', 5)"></span>
           </v-tooltip>
-
           <span class="ml-5" style="line-height: 1.5em">ТСД: {{ tsdCash | ruFormatCurrency }}</span>
-        </v-card>
+        </el-card>
       </v-col>
+
       <v-col cols="3">
-        <v-card v-if="Cash.length > 0" class="text-center title font-weight-bold">
+        <el-card
+          v-if="Cash.length > 0"
+          :body-style="{ 'padding': '1px' }"
+          class="text-center title font-weight-bold"
+        >
 
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <svg-icon icon-class="checkout" class-name="card-panel-icon" v-bind="attrs" v-on="on" />
+              <svg-icon
+                icon-class="checkout"
+                class-name="card-panel-icon"
+                v-bind="attrs"
+                v-on="on"
+                style="height: 30px"
+              />
             </template>
-            <span v-html="itemsDetails('cash', 6)" />
+            <span v-html="itemsDetails('cash', 6)"></span>
           </v-tooltip>
 
           <span class="ml-5" style="line-height: 1.5em">Атлас: {{ atlasCash | ruFormatCurrency }}</span>
-        </v-card>
+        </el-card>
       </v-col>
+
       <v-col cols="2">
-        <v-card class="text-center title font-weight-bold">
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-icon class="mb-1 mr-5" v-bind="attrs" v-on="on">help</v-icon>Баланс
-            </template>
-            <span v-html="showSaldo()" />
-          </v-tooltip>
-        </v-card>
+        <el-card :body-style="{ 'padding': '3px' }" style="display: flex; justify-content: center; align-items: center;">
+
+          <el-popover trigger="click" width="760">
+            <div style="height: 800px !important; overflow: auto; ">
+              <table
+                style="border-collapse:separate; border-spacing: 20px;"
+              >
+                <tr>
+                  <th align="left" width="170">Касса</th>
+                  <th align="left" width="130">План</th>
+                  <th align="left" width="130">Факт</th>
+                  <th align="left" width="50">Месяц</th>
+                  <th align="left" width="80">Год</th>
+                  <th align="left" width="130">Сальдо</th>
+                </tr>
+                <tr v-for="(item, i) in saldo" :key="i">
+                  <td>{{ item.CASH }}</td>
+                  <td>{{ item.PTotal?.toLocaleString("ru", { style: 'currency', currency: "RUB" }) }}</td>
+                  <td>{{ item.FTotal?.toLocaleString("ru", { style: 'currency', currency: "RUB" }) }}</td>
+                  <td>{{ item.PERIOD }}</td>
+                  <td>{{ item.YEAR }}</td>
+                  <td>{{ item.Saldo?.toLocaleString("ru", { style: 'currency', currency: "RUB" }) }}</td>
+                </tr>
+              </table>
+            </div>
+
+              <div slot="reference" style="cursor: pointer">
+                <v-icon class="mb-1 mr-3">help</v-icon>
+                <span style="font-size: 1.1rem;">Баланс</span>
+              </div>
+          </el-popover>
+
+        </el-card>
       </v-col>
+
       <v-col :cols="!roles.find(item => item === 'limitedFinancier') ? 2 : 3">
-        <v-select
+        <el-select
           v-model="cash"
-          :items="cashes"
-          item-text="name"
-          item-value="id"
-          label="Фильтр по кассе"
-          outlined
-          dense
-          hide-details
+          placeholder="Фильтр по кассе"
+          multiple
           clearable
           @change="getData"
-        />
+          style="    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);"
+        >
+          <el-option
+            v-for="cash in cashes"
+            :key="cash.id"
+            :label="cash.name"
+            :value="cash.id"
+          >
+          </el-option>
+        </el-select>
       </v-col>
+
       <v-spacer />
+
       <v-col v-if="$acl.check('SuperFinancier') || roles.find(item => item === 'limitedFinancier')" cols="1" class="text-right">
         <el-button type="success">
           <download-excel
@@ -64,6 +119,7 @@
           </download-excel>
         </el-button>
       </v-col>
+
       <v-col v-if="!roles.find(item => item === 'limitedFinancier')" cols="1" class="text-right">
         <FinanceDialog
           v-if="$acl.check('SuperFinancier')"
@@ -75,21 +131,20 @@
       </v-col>
     </v-row>
 
+    <!-- Таблица -->
+
     <v-data-table
-      v-show="!loading"
       ref="finance"
       :headers="headers"
       calculate-widths
       :items="Salary"
       multi-sort
-      :loading="Salary.length === 0"
-      loading-text="Идёт загрузка... Пожалуйста, подождите"
       :sort-by="['PERIOD', 'Debt']"
       :sort-desc="[true, true]"
       :items-per-page="15"
       :footer-props="{
         itemsPerPageAllText: 'Все',
-        itemsPerPageOptions: [50,250,500,-1],
+        itemsPerPageOptions: [15, 100, 300, -1],
         showFirstLastPage: true,
         itemsPerPageText: 'Строк на странице'
       }"
@@ -193,7 +248,7 @@
         </tr>
       </template>
       <template #[`item.USER`]="{ item }">
-        {{ userName(item.USER) }}
+        <span :style="{ color: userName(item.USER).includes('проверьте пользователя') ? 'darkred' : null }">{{ userName(item.USER) }}</span>
       </template>
       <template #[`item.PERIOD`]="{ item }">
         {{ item.PERIOD | getMonthNameByNumber | uppercaseFirst }}
@@ -249,10 +304,12 @@ export default {
       cash: null,
       final: false,
       cashes: [
-        { id: 5, name: 'Касса ТСД' },
+        /* { id: 5, name: 'Касса ТСД' }, */
         { id: 6, name: 'Касса Атлас' },
-        { id: 11, name: 'ТСД-Сервис' },
+        { id: 12, name: 'Атлас Про' },
+        { id: 21, name: 'АйДи-Сток' },
         { id: -1, name: 'Нет кассы' }
+        /* { id: 11, name: 'ТСД-Сервис' }, */
       ],
       json_fields: {},
       dataHeader: [
@@ -294,6 +351,7 @@ export default {
           value: 'Total',
           sortable: true,
           align: 'left',
+          width: 200,
           filter: (value) => {
             if (!this.filters.Total) return true
             return (this.filters.Total += value)
@@ -367,7 +425,7 @@ export default {
     },
     tsdCash() {
       return this.Cash[0] && typeof (this.Cash[0].CASH) === 'number'
-        ? this.Cash[0].CASH
+        ? 0 /* this.Cash[0].CASH */
         : 0
     },
     atlasCash() {
@@ -412,44 +470,58 @@ export default {
   },
 
   methods: {
-    getData() {
-      this.loading = true
-      return this.roles.find(item => item === 'limitedFinancier' && (this.user_name !== 'k.karpovich' && this.user_name !== 'olegbelov' && this.user_name !== 'efimchenkov'))
-        ? this.$store.dispatch('finance/getSalary', { cash_id: this.cash, user_name: this.user_name, isLimited: true }, { root: true }).then(() => {
-          this.loading = false
-        })
-        : this.$store.dispatch('finance/getSalary', { cash_id: this.cash, user_name: this.user_name, isLimited: false }, { root: true }).then(() => {
-          this.loading = false
-        })
+    async getData() {
+      this.loading = true;
+      const hasAccess = this.roles.find(item => item === 'limitedFinancier' && (this.user_name !== 'olegbelov' && this.user_name !== 'efimchenkov'));
+      const res = await this.$store.dispatch('finance/getSalary', { cash_id: this.cash, user_name: this.user_name, isLimited: hasAccess }, { root: true });
+      this.loading = false;
+
+      return res;
+
+          
     },
+
+
     getDetailedData() {
       return this.$store.dispatch('finance/getDetailedSalary', { root: true })
     },
+
+
     getCash() {
       return this.$store.dispatch('finance/getCash', { root: true })
     },
+
+
     getJitaUsers() {
       return this.$store.dispatch('fetchJiraUsers')
     },
+
+
     getCostItems() {
       getCostItems()
         .then(res => {
           this.costItems = res
         })
     },
+
+
     getCashDetails() {
       getCashDetails()
         .then(res => {
           this.DetailedCash = res
         })
     },
+
+
     getSaldo() {
       getSaldo()
         .then(res => {
           this.saldo = res
         })
     },
-    showSaldo() {
+
+
+    /* showSaldo() {
       const html = []
       html.push(`
         <table style="border-collapse:separate; border-spacing: 10px;">
@@ -459,14 +531,20 @@ export default {
         html.push(`<tr><td>${item.CASH}</td><td>${ruFormatCurrency(item.PTotal)}</td><td>${ruFormatCurrency(item.FTotal)}</td><td>${item.PERIOD}</td>
           <td>${item.YEAR}</td><td>${ruFormatCurrency(item.Saldo)}</td></tr>`)
       })
+
       html.push(`</table>`)
+
       return html.length > 0
         ? html.join('<tr>')
         : 'нет данных'
     },
+ */
+
     filterDataByCash() {
       console.log(this.cash)
     },
+
+
     userName(name) {
       if (typeof (name) === 'number' || name === 'nouser') return
       const user = this.Jira_Users.find(user => user.user_name === name)
@@ -474,6 +552,8 @@ export default {
         ? user.display_name
         : name + ' (проверьте пользователя)'
     },
+
+
     itemsDetails(type, item) {
       const html = []
       if (type === 'total') {
@@ -497,6 +577,8 @@ export default {
         ? html.join('<tr>')
         : 'нет данных'
     },
+
+
     async getExel() {
       await this.dataHeader.forEach(item => {
         if (item.value === 'Detail') return

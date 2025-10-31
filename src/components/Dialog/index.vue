@@ -7,8 +7,12 @@
     @close="close"
   >
     <el-card>
-      <div class="text-center title mb-5">{{ options[action] }}</div>
+      <div class="text-center title mb-5">
+        {{ options[action] }}
+      </div>
+
       <slot />
+
       <Form
         :items="items"
         :form="form"
@@ -69,13 +73,12 @@ export default {
     data: {
       immediate: true,
       handler(val) {
-        // console.log('From Form: ', val)
         this.form = { ...val }
+        console.log(this.form)
       }
     },
     form: {
       deep: true,
-      /* immediate: true, */
       handler(newval) {
         this.$emit('watchForm', newval)
       }

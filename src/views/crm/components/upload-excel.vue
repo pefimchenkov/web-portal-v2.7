@@ -66,6 +66,8 @@
       </v-col>
     </v-row>
 
+
+
     <!-- Модуль загрузки файла -->
     <upload-excel-component
       v-if="tableData.length === 0 && $acl.check('SuperFinancier')"
@@ -73,6 +75,8 @@
       :before-upload="beforeUpload"
     />
     <!-- -->
+
+
 
     <template v-if="tableData.length > 0 && $acl.check('SuperFinancier')">
       <v-btn
@@ -106,6 +110,8 @@
       v-if="ifCashIsMinusOne()"
       v-html="`<span class='red--text'>4* </span>Значение поля 'Касса' не корректно. Исправте значение`"
     />
+
+
     <el-table
       v-if="$acl.check('SuperFinancier')"
       :key="key"
@@ -135,29 +141,31 @@
       <el-table-column
         v-if="tableData.length > 0"
         label="Действия"
+        align="center"
       >
         <template slot-scope="scope">
-          <v-row class="text-center">
-            <v-col>
-              <el-button
-                type="primary"
-                icon="el-icon-edit"
-                round
+          <el-row>
+            <el-col :span="12" style="text-align: center">
+              <i
+                class="el-icon-edit"
                 @click="handleEdit(scope.$index, scope.row)"
-              />
-            </v-col>
-            <v-col>
-              <el-button
-                type="danger"
-                icon="el-icon-delete"
-                round
+                style="cursor: pointer; font-size: 1.2rem; color: green">
+              </i>
+
+            </el-col>
+            <el-col :span="12" style="text-align: center">
+              <i
+                class="el-icon-delete"
                 @click="handleDelete(scope.$index, scope.row)"
-              />
-            </v-col>
-          </v-row>
+                style="cursor: pointer; font-size: 1.2rem; color: red">
+              </i>
+            </el-col>
+          </el-row>
         </template>
       </el-table-column>
     </el-table>
+
+
     <v-row v-else justify="center" align="center" style="margin-top: 20px">
       <v-col cols="6" offset="" class="text-center">
         <v-alert
@@ -170,6 +178,8 @@
         </v-alert>
       </v-col>
     </v-row>
+
+
   </div>
 </template>
 
@@ -208,15 +218,19 @@ export default {
     }
   },
   computed: {
+
     Jira_Users() {
       return this.$store.getters.jira_users
     },
+
     currentUser() {
       return this.Jira_Users.find(item => item.email === this.$store.getters.currentUser.email)
     },
+
     financeTypes() {
       return this.$store.state.finance.FinanceTypes
     },
+
     cashes() {
       return [
         { id: 5, name: 'Касса ТСД' },
@@ -232,6 +246,7 @@ export default {
         { id: 19,	name:	'ЭнДиЛоракс' }
       ]
     },
+
     UsersNotInJira() {
       const arr = this.tableData.map(row => {
         const user = this.Jira_Users.find(user => user.user_name === row['Пользователь'])
@@ -239,9 +254,11 @@ export default {
       })
       return [...new Set(arr.filter(item => item))]
     },
+
     MonthNotNumber() {
       return this.tableData.find(item => typeof (item['Месяц']) !== 'number')
     },
+
     TypeNotNumber() {
       return this.tableData.find(item => typeof (item['Статья']) !== 'number' || ![1, 2, 3, 4, 8, 9, 10, 26, 28].includes(item['Статья']))
     }
@@ -263,6 +280,7 @@ export default {
       })
       return false
     },
+
     handleSuccess({ results, header }) {
       this.loading = true
       setTimeout(() => {
@@ -271,13 +289,16 @@ export default {
         this.loading = false
       }, 1000)
     },
+
     handleEdit(index, row) {
       this.dialog = true
       Object.assign(this.editedItem, { ...row, index })
     },
+
     handleDelete(index) {
       this.tableData.splice(index, 1)
     },
+
     getCostItem(index) {
       switch (index) {
         case 1: return 'ЗП (официально)'
@@ -293,6 +314,7 @@ export default {
         default: return `<span class='red--text'>Статьи данного типа нет в проверке (можно добавить вручную) ***</span>`
       }
     },
+
     getCash(index) {
       switch (index) {
         case 5: return 'Касса ТСД'
@@ -311,6 +333,7 @@ export default {
         case 22: return 'ИП Ерохина'
       }
     },
+
     getUser(username) {
       const user = this.Jira_Users.find(user => user.user_name === username)
       if (user) {
@@ -319,10 +342,12 @@ export default {
         return `<span class="red--text">${username} *</span>`
       }
     },
+
     getUsersEmails() {
       const users = this.Jira_Users.filter(jiraUser => this.tableData.map(data => data['Пользователь']).includes(jiraUser.user_name))
       return users.map(user => user.email)
     },
+
     getMonth(month) {
       if (typeof (month) !== 'number' || (month > 12 || month < 1)) {
         return `<span class="red--text">${month} **</span>`
@@ -330,41 +355,48 @@ export default {
         return month
       }
     },
+
     toInt(sum) {
       return typeof (sum) === 'string'
         ? `<span class='red--text'>${sum}</span>`
         : sum.toLocaleString()
     },
+
     ifCashIsMinusOne() {
       if (this.tableData.find(item => item['Касса'] === -1 || !item['Касса'])) return true
       else return false
     },
+
     IncomeNoCheck(row) {
       const cash = this.financeTypes.find(item => item.id === row['Касса'])
       if (cash && cash.type === 3) return false
       else return true
     },
+
     confirm() {
       this.key++
       const sum = this.editedItem['Сумма']
       const month = this.editedItem['Месяц']
       const year = this.editedItem['Год']
 
-      if (validNumber(sum) && validNumber(month) && validNumber(year)) {
-        const reg = /^([1-9]|1[0-2])$/
+      if (!validNumber(sum) || !validNumber(month) || !validNumber(year)) {
+        return this.messageRule = 'Поля `Сумма`, `Месяц` и `Год` должны быть в числовом формате!'
+      }
+        const reg = /^([-+][1-9]|1[0-2])$/;
+
         if (!reg.test(month)) {
-          this.messageRule = 'Месяц должен быть в диапазоне от 1 до 12!'
-          return
+          return this.messageRule = 'Месяц должен быть в диапазоне от 1 до 12!'
         }
+
         this.editedItem['Месяц'] = Number(this.editedItem['Месяц'])
         this.editedItem['Сумма'] = parseInt(this.editedItem['Сумма'])
         Object.assign(this.tableData[this.editedItem.index], this.editedItem)
         this.ifCashIsMinusOne()
         this.close()
-      } else {
-        this.messageRule = 'Поля `Сумма`, `Месяц` и `Год` должны быть в числовом формате!'
-      }
+        
+      
     },
+
     close() {
       this.dialog = false
       this.messageRule = null
@@ -372,6 +404,7 @@ export default {
         this.editedItem[key] = ''
       })
     },
+
     toDB() {
       this.loading = true
       this.$store.dispatch('finance/excelToDB', { data: this.tableData, user: this.currentUser, emails: this.getUsersEmails() })

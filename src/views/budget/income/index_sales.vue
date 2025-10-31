@@ -113,7 +113,7 @@
         :prop="column.value"
         :label="column.text"
         :align="column.align || (textCenter ? 'center' : 'left')"
-        :width="column.width"
+        :min-width="column.width"
         :fixed="column.fixed"
         :resizable="column.resizable"
         show-overflow-tooltip
@@ -195,6 +195,9 @@ import { createHeaders, createSelectOptionsFromTableData, headersToObject, setRe
 
 import { mapState } from 'vuex'
 import { getOrders } from '@/api/budget/income'
+
+import { filterHandler } from '@/workers/filters.js'
+
 // import { getHistoricalRates } from '@/api/cbr.js'
 
 
@@ -290,6 +293,13 @@ export default {
       }
     },
 
+    listQuery: {
+      deep: true,
+      handler(val) {
+        localStorage.setItem('incomeSalesListQuery', JSON.stringify(val))
+      }
+    }
+
   },
 
 
@@ -297,6 +307,12 @@ export default {
 
   beforeMount() {
     this.WindowHeight = window.innerHeight - 220;
+    this.filters = JSON.parse(localStorage.getItem(this.reference)) || {};
+
+    const incomeSalesListQuery = localStorage.getItem('incomeSalesListQuery');
+    if (incomeSalesListQuery) {
+      this.listQuery = JSON.parse(incomeSalesListQuery);
+    }
   },
 
   mounted() {
@@ -402,7 +418,7 @@ export default {
       const profit_manual = is_manual?.profit;
 
 
-      if (item.sfnum.includes('25112421')) {
+      if (item.sfnum.includes('09062521')) {
         console.log('item', item)
          console.log(client?.MANAGER || Orders.find(om => om.Invoice === invoice?.docid)?.om)
          console.log(client)
@@ -423,13 +439,13 @@ export default {
 
       // this.getSumWithRate(item.sum, item.date, item.currency, (item.currency === 'USD' ? dollar_rate.ValCurs.Record : euro_rate.ValCurs.Record))
 
-      const om_sum = item.sum * item.currencyRate
+      const om_sum = ((item.sum * item.currencyRate) - ((item.sum * item.currencyRate) * 20 / 120))
         * ((profit_manual ? (profit_manual / 100) : null) || profit)
         * ((om_percent_manual || this.calcOmPercent((item.sum * profit), project, (sm_manual || sm))) / 100)
 
       //this.getSumWithRate(item.sum, item.date, item.currency, (item.currency === 'USD' ? dollar_rate.ValCurs.Record : euro_rate.ValCurs.Record))
 
-      const sm_sum = item.sum * item.currencyRate
+      const sm_sum = ((item.sum * item.currencyRate) - ((item.sum * item.currencyRate) * 20 / 120))
         * ((profit_manual ? (profit_manual / 100) : null) || profit)
         * ((sm_percent_manual || this.calcSmPercent(project, (om_manual || om))) / 100)
 
@@ -484,6 +500,12 @@ export default {
         .filter(item => [current_display_name, robot, 'нет данных'].includes(item));
     }
 
+     /* Web Worker для фильтров */
+    
+     this.updateData();
+
+    /* *********************** */
+
     console.timeEnd('Сomponent creation time')
     
 
@@ -537,17 +559,28 @@ export default {
       this.filteredTableData = this.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
     },
 
-    updateData(data) {
+    /* updateData(data) {
       this.filteredTableData = data || this.tableData
+    }, */
+
+    updateData() {
+      this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
+        .then(res => {
+          this.filteredTableData = (res || this.tableData)
+          localStorage.setItem(this.reference, JSON.stringify(this.filters))
+        })
+        .catch(console.error)
     },
+
 
     updateFilters(val) {
       if (val) this.filters = { ...val }
     },
 
     resetFilters() {
-      this.filters = {}
-      this.updateData()
+      this.filters = {};
+      this.filteredTableData = this.tableData;
+      //this.updateData()
     },
 
     addItem() {

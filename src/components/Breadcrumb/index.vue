@@ -14,11 +14,14 @@
 import pathToRegexp from 'path-to-regexp'
 
 export default {
+
   data() {
     return {
       levelList: null
     }
   },
+
+
   watch: {
     $route(route) {
       // if you go to the redirect page, do not update the breadcrumbs
@@ -28,10 +31,13 @@ export default {
       this.getBreadcrumb()
     }
   },
+
+
   created() {
     this.getBreadcrumb()
-    /* console.log(this.$route.params) */
   },
+
+
   methods: {
     getBreadcrumb() {
       // only show routes with meta.title

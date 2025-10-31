@@ -3,7 +3,11 @@
 
   <el-row :gutter="24">
     <el-col :span="12" :xs="24">
-      <user-card :user="user" :info="info" :current-jira-user="currentJiraUser" />
+      <user-card
+        :user="user"
+        :info="info"
+        :current-jira-user="currentJiraUser"
+      />
     </el-col>
 
     <el-col :span="12" :xs="24">
@@ -41,61 +45,40 @@
 import UserCard from './UserCard.vue'
 
 export default {
-
   name: 'Account',
-
   components: { UserCard },
 
   props: {
-
     info: {
-
       type: Object,
       default: () => {
         return {
-
           lastname: '',
           firstname: '',
           emailaddress: '',
           phone: '',
           company: '',
           position: ''
-
         }
       }
-
     },
 
     user: {
-
       type: Object,
       default: () => {
         return {
-
           name: '',
           role: '',
           email: '',
           avatar: ''
-
         }
       }
-
     },
 
     currentJiraUser: {
-
       type: Object,
-      default: () => {
-        return {
-
-        }
-      }
-
+      default: () => {}
     }
-
-  },
-
-  computed: {
 
   },
 

@@ -33,6 +33,48 @@ export function getResolvedOtherRemonts(params) {
   })
 }
 
+export function getClosedPresales(params) {
+  return request({
+    url: '/statistics/remonts/closed_presales',
+    method: 'get',
+    params
+  })
+}
+
+export function getClosedAcceptance(params) {
+  return request({
+    url: '/statistics/remonts/closed_acceptance',
+    method: 'get',
+    params
+  })
+}
+
+export function getClosedDelivery(params) {
+  return request({
+    url: '/statistics/remonts/closed_delivery',
+    method: 'get',
+    params
+  })
+}
+
+export function getClosedTemporaryUsed(params) {
+  return request({
+    url: '/statistics/remonts/closed_temporary_used',
+    method: 'get',
+    params
+  })
+}
+
+export function getClosedIssuance(params) {
+  return request({
+    url: '/statistics/remonts/closed_issuance',
+    method: 'get',
+    params
+  })
+}
+
+
+
 /* ****************** */
 
 export function getCurrentCreatedRemonts(params) {

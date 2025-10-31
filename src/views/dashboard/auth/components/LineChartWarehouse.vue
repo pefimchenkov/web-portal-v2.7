@@ -77,11 +77,11 @@ export default {
       this.setOptions(this.chartData)
     },
 
-    setOptions({ createdData, resolvedData, interval } = {}) {
+    setOptions({ presalesData, acceptanceData, deliveryData, temporaryUsedData, issuanceData, interval } = {}) {
       this.chart.setOption(
         {
           title : {
-            text:"Ремонт Атлас",
+            text:"Склад",
             x:'right'
           },
           xAxis: {
@@ -112,11 +112,11 @@ export default {
             padding: [5, 10]
           },
           legend: {
-            data: ['Созданные', 'Завершённые']
+            data: ['Предпродажки', 'Приёмки', 'Доставки', 'Временное пользование', 'Выдача']
           },
           series: [
             {
-              name: 'Созданные',
+              name: 'Предпродажки',
               itemStyle: {
                 color: '#36a3f7',
                 lineStyle: {
@@ -126,12 +126,12 @@ export default {
               },
               smooth: true,
               type: 'line',
-              data: createdData,
+              data: presalesData,
               animationDuration: 2800,
               animationEasing: 'cubicInOut'
             },
             {
-              name: 'Завершённые',
+              name: 'Приёмки',
               smooth: true,
               type: 'line',
               itemStyle: {
@@ -144,10 +144,65 @@ export default {
                   color: '#f3f8ff'
                 }
               },
-              data: resolvedData,
+              data: acceptanceData,
               animationDuration: 2800,
               animationEasing: 'quadraticOut'
-            }]
+            },
+            {
+              name: 'Доставки',
+              smooth: true,
+              type: 'line',
+              itemStyle: {
+                color: 'red',
+                lineStyle: {
+                  color: 'red',
+                  width: 2
+                },
+                areaStyle: {
+                  color: '#f3f8ff'
+                }
+              },
+              data: deliveryData,
+              animationDuration: 2800,
+              animationEasing: 'quadraticOut'
+            },
+            {
+              name: 'Временное пользование',
+              smooth: true,
+              type: 'line',
+              itemStyle: {
+                color: 'orange',
+                lineStyle: {
+                  color: 'orange',
+                  width: 2
+                },
+                areaStyle: {
+                  color: '#3cdde5'
+                }
+              },
+              data: temporaryUsedData,
+              animationDuration: 2800,
+              animationEasing: 'quadraticOut'
+            },
+            {
+              name: 'Выдача',
+              smooth: true,
+              type: 'line',
+              itemStyle: {
+                color: 'black',
+                lineStyle: {
+                  color: 'black',
+                  width: 2
+                },
+                areaStyle: {
+                  color: '#0ec5ad'
+                }
+              },
+              data: issuanceData,
+              animationDuration: 2800,
+              animationEasing: 'quadraticOut'
+            }
+          ]
         }
       )
     }

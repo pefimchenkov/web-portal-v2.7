@@ -86,14 +86,14 @@
 
             <el-row :gutter="10">
               <el-col :span="24">
-              <el-form-item label="Описание" prop="comment">
-                <el-input
-                  v-model="form.comment"
-                  type="textarea"
-                  maxlength="200"
-                  show-word-limit
-                  clearable
-                />
+                <el-form-item label="Описание" prop="comment">
+                  <el-input
+                    v-model="form.comment"
+                    type="textarea"
+                    maxlength="200"
+                    show-word-limit
+                    clearable
+                  />
               </el-form-item>
             </el-col>
 
