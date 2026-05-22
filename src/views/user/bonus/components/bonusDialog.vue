@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/valid-v-slot -->
 <template>
   <div>
     <v-app-bar dense fixed>
@@ -233,7 +234,7 @@ export default {
       BonusSale: state => state.user.BonusSale,
       BonusProfit: state => state.user.BonusProfit
     }),
-    ...mapGetters(['currentUser', 'jira_users']),
+    ...mapGetters(['auth/currentUser', 'jira_users']),
     computedHeaders() {
       return this.headers.filter(header => header.selected)
     },

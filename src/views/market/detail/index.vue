@@ -267,7 +267,7 @@
 import Photo from './components/photo'
 import Parts from './components/parts/index.vue'
 import Rating from './components/rating'
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import { getMarketParts } from '@/api/market'
 
 import { AclRule } from 'vue-acl'

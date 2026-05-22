@@ -12,8 +12,6 @@
 
     <el-card v-loading="loading" shadow="never">
 
-      <!-- {{ total + ' ' + discount + ' ' + sale }} -->
-
       <div style="display: flex; justify-content: space-between;">
         <el-row type="flex"><span style="font-weight: 600; margin-right: 10px">Тип цены:</span>{{ xformPriceType(priceType) }}</el-row>
         <el-row type="flex" justify="end" style="margin-bottom: 15px">
@@ -174,7 +172,7 @@ export default {
 
     ...mapGetters({ market: 'market_new/market' }),
     user() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.email : null
+      return this.$store.getters["auth/currentUser"]?.email || null
     },
     disabled() {
       const noCount = this.form.counts.some(count => !count);
@@ -245,16 +243,12 @@ export default {
 
       this.form.parts.forEach(parts => {
         const current = this.parts.find(i => i.market_id === parts.marketid)
-
-        console.log('current', current)
-
         this.form.counts.push(current.qty)
         this.form.discounts.push(current.sale_xs)
         this.form.deviations.push(current.price_deviation)
         this.form.prices.push(current.price)
       })
 
-      console.log(this.form)
       this.summaSdelki = this.total
     },
 

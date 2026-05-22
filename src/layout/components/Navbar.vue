@@ -45,10 +45,6 @@
             <el-dropdown-item>Рабочий стол</el-dropdown-item>
           </router-link>
 
-          <!-- <a target="_blank" href="https://panjiachen.github.io/vue-element-admin-site/#/">
-            <el-dropdown-item>Docs</el-dropdown-item>
-          </a> -->
-
           <el-dropdown-item divided @click.native="logout">
             <span style="display:block;">Выйти</span>
           </el-dropdown-item>
@@ -97,19 +93,20 @@ export default {
   },
 
   methods: {
+
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
     },
+
+
     closeDialog(data) {
       this.dialog = !data
     },
+
+
     async logout() {
-      await this.$store.dispatch('LogoutUser')
-      this.$router
-      .push(`/login?redirect=${this.$route.fullPath}`)
-      .catch(error => {
-        console.info(error.message)
-      })
+      await this.$store.dispatch('auth/logout')
+      this.$router.push(`/login?redirect=${this.$route.fullPath}`)
     }
   }
 

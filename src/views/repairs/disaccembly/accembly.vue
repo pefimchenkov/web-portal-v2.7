@@ -242,8 +242,8 @@ async function assembly() {
     return { "id": `${item.marketId}`, "qty": `${state.devicesCount}`, "val": 1}
   })
   const targetGood = [{ "id": `${state.selectedTargetDevice.marketId}`, "qty": `${state.devicesCount}`, "val": 1 }]
-  const username = store.state.jira_users.JIRA_USERS.find(user => user.email === store.state.user.currentUser.email)?.user_name
-  const displayname = store.state.jira_users.JIRA_USERS.find(user => user.email === store.state.user.currentUser.email)?.display_name
+  const username = store.state.jira_users.JIRA_USERS.find(user => user.email === store.getters["auth/currentUser"]?.email)?.user_name
+  const displayname = store.state.jira_users.JIRA_USERS.find(user => user.email === store.getters["auth/currentUser"]?.email)?.display_name
 
   const dataForFirstMovement = {
     "date": new Date().toISOString().slice(0, 19),
@@ -275,7 +275,7 @@ async function assembly() {
     qty: state.devicesCount,
     qty_zip: sourceGoods.length,
     price: state.selected1CDetails.costPrice,
-    email: store.state.user.currentUser.email,
+    email: store.getters["auth/currentUser"]?.email,
     displayname,
     goods: sourceGoods
   }

@@ -1,5 +1,6 @@
-import Api from '@/services/Api'
+//import Api from '@/services/___Api'
 import axios from 'axios'
+import api from "@/services/api"
 
 // const { convertXML } = require("simple-xml-to-json");
 
@@ -49,10 +50,11 @@ export default {
     async getCurrency({ commit, state }) {
       if (state.Currency.length > 0) return
 
-      await Api()
-        .get('currency')
+      await api.get('/currency')
         .then(res => {
           const values = Object.values(res.data)
+
+          console.log('cur', values)
           commit('SET_CURRENCY', values)
 
           values.forEach(valute => {
@@ -69,8 +71,7 @@ export default {
     async getRatefromCB({ commit, state }) {
       if (state.Rate.length > 0) return
 
-      await axios
-        .get('https://www.cbr-xml-daily.ru/daily_json.js')
+      await axios.get('https://www.cbr-xml-daily.ru/daily_json.js')
         .then(res => {
           const values = Object.values(res.data)
           commit('SET_RATE', values)

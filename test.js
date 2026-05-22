@@ -1,1 +1,6 @@
-// напиши сайт на js лёгкой сложности
+function test() {
+    const res = 3 + 2;
+    return res;
+}
+
+console.log(test());

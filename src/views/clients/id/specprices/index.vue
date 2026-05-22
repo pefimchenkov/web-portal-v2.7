@@ -507,7 +507,7 @@ export default {
           this.editedItem.nds = false
           this.editedItem.product = item.ZIPNAME
           this.editedItem.model_fit = this.Models.find(i => i.ID === +item.model_fit)
-          this.editedItem.email = this.$store.getters.currentUser.email
+          this.editedItem.email = this.$store.getters["auth/currentUser"].email
 
           typeof item.product === 'number'
             ? (this.objZip = this.Zip.find((z) => z.zipID === item.product))
@@ -535,7 +535,7 @@ export default {
           this.localLoading = true
 
           this.editedItem.price = parseFloat(this.editedItem.price)
-          this.editedItem.email = this.$store.getters.currentUser.email
+          this.editedItem.email = this.$store.getters["auth/currentUser"].email
           this.editedItem.product = this.objZip.zipID
 
           this.editedItem.currency = this.selectedCurrency?.id
@@ -550,16 +550,16 @@ export default {
               if (this.editedItem.nds && this.editedItem.nds === true) {
                 this.editedItem.pricends = (parseFloat(this.editedItem.price)).toFixed(2)
                 this.editedItem.price = parseFloat(
-                  (this.editedItem.price / 1.2).toFixed(2)
+                  (this.editedItem.price / 1.22).toFixed(2)
                 )
               } else {
                 this.editedItem.pricends = parseFloat(
-                  (this.editedItem.price * 1.2).toFixed(2)
+                  (this.editedItem.price * 1.22).toFixed(2)
                 )
               }
 
               this.editedItem.ART = this.objZip.zipART
-              this.editedItem.EMAIL = this.$store.getters.currentUser.email
+              this.editedItem.EMAIL = this.$store.getters["auth/currentUser"].email
 
               this.editedItem.duplicate
                 ? (this.editedItem.duplicate = 1)
@@ -579,7 +579,7 @@ export default {
         if (this.$refs.price.validate() && this.$refs.alias.validate() && this.$refs.curr.validate() && this.$refs.curr_agent.validate()) {
           this.localLoading = true
 
-          const email = this.$store.getters.currentUser.email
+          const email = this.$store.getters["auth/currentUser"].email
           const spec_id = this.editedItem?.SPEC?.SPECID
 
           getNds({ spec_id })
@@ -587,10 +587,10 @@ export default {
               if (response) {
                 this.editedItem.pricends = parseFloat(this.editedItem.price)
                 this.editedItem.price = parseFloat(
-                  (this.editedItem.price / 1.2).toFixed(2)
+                  (this.editedItem.price / 1.22).toFixed(2)
                 )
               } else {
-                this.editedItem.pricends = this.editedItem.price * 1.2
+                this.editedItem.pricends = this.editedItem.price * 1.22
               }
 
               const data = {
@@ -613,7 +613,7 @@ export default {
                     this.$store.commit('setData', 'Данные успешно добавлены.')
                   }
 
-                  this.editedItem.EMAIL = this.$store.getters.currentUser.email
+                  this.editedItem.EMAIL = this.$store.getters["auth/currentUser"].email
                   this.editedItem.ART = this.objZip.zipART
                   this.editedItem.SPEC = this.editedItem.SPEC.IKEY
                   this.editedItem.product = this.objZip.zipNAME

@@ -37,15 +37,14 @@
       class="mx-auto mt-3">
 
       <v-list dense>
-        <template v-for="(item, index) in People">
+        <div v-for="(item, index) in People" :key="item.title">
           <v-list-item
-            :key="item.title"
+            
           >
-            <v-icon small class="mr-3" v-text="item.icon" />
+            <v-icon small class="mr-3">{{ item.icon }}</v-icon>
 
             <v-list-item-content>
-              <v-list-item-title
-                v-html="item.title" />
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
             </v-list-item-content>
 
             <v-list-item-content>
@@ -68,7 +67,7 @@
           <v-divider
             :key="index"
           />
-        </template>
+        </div>
       </v-list>
 
     </el-card>
@@ -108,7 +107,7 @@ export default {
     },
 
     currentUser() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     },
 
     currentUserName() {

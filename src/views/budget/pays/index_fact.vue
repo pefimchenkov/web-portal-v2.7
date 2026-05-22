@@ -132,8 +132,8 @@
           :filters="filters"
           :types="{
             Input: ['paymentNum', 'subjectNum', 'paymentPurpose', 'paymentSum', 'subjectPresentation'],
-            MultiSelect: ['contractorName', 'cfAnalitic'],
-            Select: [],
+            MultiSelect: ['contractorName',],
+            Select: ['cfAnalitic'],
             CheckBox: [],
             Date: ['paymentDate', 'subjectDate'],
             Clear: ['actions']
@@ -262,7 +262,7 @@
       },
   
       email() {
-        return this.$store.state.user.currentUser.email
+        return this.$store.getters["auth/currentUser"]?.email
       },
   
     },

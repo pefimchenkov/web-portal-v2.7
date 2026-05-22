@@ -909,7 +909,7 @@ export default {
     },
 
     user() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.email : null
+      return this.$store.getters["auth/currentUser"]?.email || null
     },
 
     jiraUsers() {
@@ -933,7 +933,7 @@ export default {
     },
 
     access() {
-      const role = this.$store.getters.userRole
+      const role = this.$store.getters["auth/currentUser"]?.roles
       const Arr = role.split('&')
       if (Arr.find(item => item === 'admin') || Arr.find(item => item === 'engineer')) {
         return true

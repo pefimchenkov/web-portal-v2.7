@@ -77,7 +77,7 @@ export default {
       this.setOptions(this.chartData)
     },
 
-    setOptions({ presalesData, acceptanceData, deliveryData, temporaryUsedData, issuanceData, interval } = {}) {
+    setOptions({ presalesData, acceptanceData, deliveryData, temporaryUsedData, issuanceData, nomsData, interval } = {}) {
       this.chart.setOption(
         {
           title : {
@@ -199,6 +199,24 @@ export default {
                 }
               },
               data: issuanceData,
+              animationDuration: 2800,
+              animationEasing: 'quadraticOut'
+            },
+            {
+              name: 'Номенклатура',
+              smooth: true,
+              type: 'line',
+              itemStyle: {
+                color: '#6361e7',
+                lineStyle: {
+                  color: '#6361e7',
+                  width: 2
+                },
+                areaStyle: {
+                  color: '#0ec5ad'
+                }
+              },
+              data: nomsData,
               animationDuration: 2800,
               animationEasing: 'quadraticOut'
             }

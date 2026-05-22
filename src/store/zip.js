@@ -16,9 +16,9 @@ export default {
 
       return new Promise((resolve, reject) => {
         getZip()
-          .then(res => {
-            commit('loadZip', res)
-            resolve(res)
+          .then(({ data }) => {
+            commit('loadZip', data)
+            resolve(data)
 
             console.timeEnd('ЗИП успешно загружен')
           })

@@ -1,4 +1,4 @@
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import { getAll } from '@/api/models/models.js'
 
 export default {

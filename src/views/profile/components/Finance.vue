@@ -15,9 +15,9 @@
 
         <el-timeline style="max-width: 60%; min-width: 300px !important; margin: 0 auto">
           <el-timeline-item
-            v-for="(item,index) of salaryByYear[line].sort((a,b) => (b.PERIOD - a.PERIOD))"
+            v-for="(item,index) of salaryByYear[line].sort((a,b) => (b?.PERIOD - a?.PERIOD))"
             :key="index"
-            :timestamp="`${xferMonth(item.PERIOD)}`"
+            :timestamp="`${xferMonth(item?.PERIOD)}`"
             placement="top"
           >
             <el-card>
@@ -49,51 +49,7 @@
             </el-card>
 
           </el-timeline-item>
-
         </el-timeline>
-
-        <!-- <v-timeline style="max-width: 60%; min-width: 300px !important; margin: 0 auto">
-          <v-timeline-item
-            v-for="(item,index) of salaryByYear[line].sort((a,b) => (b.PERIOD - a.PERIOD))"
-            :key="index"
-            small
-            fill-dot
-          >
-            <template #opposite>
-              <span class="primary white--text pa-2">{{ item.PERIOD + '.' + item.YEAR }}</span>
-            </template>
-
-            <el-card>
-              <el-row type="flex" justify="center" align="middle">
-                <el-col :span="24">
-
-                  <h4 style="padding-bottom: 10px">
-                    <v-tooltip top>
-                      <template #activator="{ on, attrs }">
-                        <i class="el-icon-info mr-1" style="font-size: 16px" v-bind="attrs" v-on="on" />
-                      </template>
-                      <span v-html="totalDetails(item)" />
-                    </v-tooltip>
-                    Общий доход: {{ item.Total | ruFormatCurrency }}
-                    {{ item.manual ? ' (доход не предоставлен)' : '' }}
-                  </h4>
-
-                  <div><b>Получено:</b> {{ item.Paid | ruFormatCurrency }} ({{ item.Total ? Math.round((item.Paid / item.Total) * 100) : 0 }}%)</div>
-                  <div><b>Долг:</b> {{ (item.Total - item.Paid) | ruFormatCurrency }}</div>
-                  <div><b>Финализация:</b> {{ item.Final ? 'да' : 'нет' }}</div>
-                </el-col>
-                <el-row>
-                  <el-col :span="24" class="text-center">
-                    <el-button size="small" type="info" plain @click="getDetail(item)">Подробнее</el-button>
-                  </el-col>
-                </el-row>
-              </el-row>
-
-            </el-card>
-
-          </v-timeline-item>
-        </v-timeline> -->
-
       </el-tab-pane>
 
       <el-tab-pane v-if="premium.length > 0" label="Квартальная премия" name="premium"><Premium /></el-tab-pane>
@@ -117,17 +73,13 @@ import { mapState } from 'vuex'
 export default {
 
   filters: {
-
     ruFormatCurrency
-
   },
 
   components: {
-
     History,
     Detail,
     Premium
-
   },
 
   data() {
@@ -144,16 +96,13 @@ export default {
 
     ...mapState({
       Jira_Users: (state) => state.jira_users.JIRA_USERS,
-      fbUser: (state) => state.fb.user,
       employeeSalary: (state) => state.finance.employeeSalary,
       incomeDetail: (state) => state.finance.IncomeDetail,
       IncomeCashDetail: (state) => state.finance.IncomeCashDetail
     }),
 
     email() {
-      return this.$store.getters.currentUser
-        ? this.$store.getters.currentUser.email
-        : 'имя пользователя отсутствует'
+      return this.$store.getters["auth/currentUser"]?.email || 'имя пользователя отсутствует'
     },
 
     jiraUser() {
@@ -165,8 +114,9 @@ export default {
     },
 
     salary() {
-      return this.employeeSalary
-        .filter(item => ((item.Total - item.Paid) !== 0 && (Math.sign(item.PERIOD) !== -1)) || (!item.Final && (item.YEAR >= 2021 || (item.PERIOD === 12 && item.YEAR === 2020)) && (Math.sign(item.PERIOD) !== -1)))
+      return this.employeeSalary.filter(item => ((item.Total - item.Paid) !== 0 && (Math.sign(item?.PERIOD) !== -1))
+        || (!item.Final && (item.YEAR >= 2021
+        || (item?.PERIOD === 12 && item.YEAR === 2020)) && (Math.sign(item?.PERIOD) !== -1)))
     },
 
     salaryByYear() {
@@ -174,7 +124,7 @@ export default {
     },
 
     premium() {
-      return this.employeeSalary.filter(item => item.Total - item.Paid !== 0 && Math.sign(item.PERIOD) === -1)
+      return this.employeeSalary.filter(item => item.Total - item.Paid !== 0 && Math.sign(item?.PERIOD) === -1)
     }
 
   },
@@ -194,10 +144,10 @@ export default {
 
   async created() {
     await this.$store.dispatch('fetchJiraUsers')
-    await this.$store.dispatch('finance/getEmployeeSalary', { username: this.jiraUser.user_name }, { root: true })
-    await this.$store.dispatch('finance/getEmployeeSalaryDetail', { username: this.jiraUser.user_name }, { root: true })
-    await this.$store.dispatch('finance/getIncomeDetail', { username: this.jiraUser.user_name }, { root: true })
-    await this.$store.dispatch('finance/getIncomeCashDetail', { username: this.jiraUser.user_name }, { root: true })
+    await this.$store.dispatch('finance/getEmployeeSalary', { username: this.jiraUser?.user_name }, { root: true })
+    await this.$store.dispatch('finance/getEmployeeSalaryDetail', { username: this.jiraUser?.user_name }, { root: true })
+    await this.$store.dispatch('finance/getIncomeDetail', { username: this.jiraUser?.user_name }, { root: true })
+    await this.$store.dispatch('finance/getIncomeCashDetail', { username: this.jiraUser?.user_name }, { root: true })
 
     this.addPrevMonthToSalary()
   },
@@ -213,7 +163,7 @@ export default {
       const filtered = [this.employeeSalary[this.employeeSalary.length - 1], this.employeeSalary[this.employeeSalary.length - 2]]
       let year = new Date().getFullYear()
 
-      let month = (filtered[0].PERIOD >= new Date().getMonth() + 1) && filtered[0].YEAR >= year
+      let month = (filtered[0]?.PERIOD >= new Date().getMonth() + 1) && filtered[0].YEAR >= year
         ? filtered[0].PERIOD
         : new Date().getMonth() + 1
 
@@ -223,7 +173,7 @@ export default {
           year--
         }
 
-        if (!(filtered[0].PERIOD === (month - 1) && filtered[0].YEAR === year) && !(filtered[1].PERIOD === (month - 1) && filtered[1].YEAR === year)) {
+        if (!(filtered[0]?.PERIOD === (month - 1) && filtered[0].YEAR === year) && !(filtered[1]?.PERIOD === (month - 1) && filtered[1].YEAR === year)) {
           this.salary.push({ PERIOD: month - 1, YEAR: year, Total: 0.001, Paid: 0, manual: true })
         }
         month--
@@ -231,7 +181,7 @@ export default {
     },
 
     totalDetails(item) {
-      const details = this.incomeDetail.filter(obj => obj.PERIOD === item.PERIOD && obj.YEAR === item.YEAR)
+      const details = this.incomeDetail.filter(obj => obj?.PERIOD === item?.PERIOD && obj.YEAR === item.YEAR)
       const html = []
 
       details.forEach(el => {

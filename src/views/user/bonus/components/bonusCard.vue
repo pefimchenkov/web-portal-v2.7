@@ -34,6 +34,7 @@
           @dialogToggle="changeDialog"
         />
       </v-dialog>
+
       <v-dialog v-model="dialogProfit">
         <bonusDialogProfit
           v-if="dialogToggle"
@@ -46,6 +47,7 @@
           :typedate="typeDate"
           @dialogToggle="changeDialog"
         />
+        
         <bonusDialogSC
           v-else
           :key="name"
@@ -58,6 +60,7 @@
           @dialogToggle="changeDialog"
         />
       </v-dialog>
+
       <v-row justify="center" align="center">
         <v-col cols="8">
           <v-progress-linear
@@ -259,7 +262,7 @@ export default {
       return this.$store.getters.loading
     },
     userRole() {
-      return this.$store.getters.userRole
+      return this.$store.getters["auth/currentUser"]?.roles
     },
     Quarters() {
       return [
@@ -319,7 +322,7 @@ export default {
     },
     // eslint-disable-next-line vue/return-in-computed-property
     email() {
-      const user = this.$store.getters.currentUser
+      const user = this.$store.getters["auth/currentUser"]
       if (user) return user.email
     },
     items() {

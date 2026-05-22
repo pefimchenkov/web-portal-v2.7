@@ -224,7 +224,7 @@ export default {
     },
 
     currentUser() {
-      return this.Jira_Users.find(item => item.email === this.$store.getters.currentUser.email)
+      return this.Jira_Users.find(item => item.email === this.$store.getters["auth/currentUser"]?.email)
     },
 
     financeTypes() {

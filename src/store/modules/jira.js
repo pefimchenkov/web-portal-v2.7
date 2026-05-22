@@ -22,6 +22,12 @@ const mutations = {
   }
 }
 
+const getters = {
+  users: (state) => {
+    return state.users
+  }
+}
+
 
 
 const actions = {
@@ -30,6 +36,7 @@ const actions = {
       getJiraUsers()
         .then(users => {
           commit('USERS', users)
+          console.log('dwdawdwdaw', users)
           resolve(users)
         })
     })
@@ -69,5 +76,6 @@ export default {
   namespaced: true,
   state,
   mutations,
-  actions
+  actions,
+  getters
 }

@@ -97,7 +97,7 @@ export default {
     ...mapGetters({ market: 'market_new/market' }),
 
     user() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.email : null
+      return this.$store.getters["auth/currentUser"]?.email || null
     }
 
   },

@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import ads from './ads'
+import auth from './auth'
 import user from './user'
 import shared from './shared'
 import orders from './__orders'
@@ -52,7 +52,7 @@ export default new Vuex.Store({
   modules: {
 
     ...namedModules,
-    ads,
+    auth,
     user,
     shared,
     orders,

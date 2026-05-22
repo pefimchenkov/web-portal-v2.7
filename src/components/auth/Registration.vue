@@ -24,7 +24,7 @@
                 name="password"
                 label="Пароль"
                 type="password"
-                :counter="6"
+                :counter="20"
                 :rules="passRules"
               />
               <v-text-field
@@ -34,7 +34,7 @@
                 name="confirm-password"
                 label="Повторите пароль"
                 type="password"
-                :counter="6"
+                :counter="20"
                 :rules="confirmPassRules"
               />
             </v-form>
@@ -54,8 +54,13 @@
   </v-container>
 </template>
 
+
+
 <script>
+
 export default {
+  name: 'Register',
+
   data() {
     return {
       email: '',
@@ -69,8 +74,8 @@ export default {
       passRules: [
         v => !!v || 'Пароль - обязательный параметр',
         v =>
-          (v && v.length >= 6) ||
-					'Пароль должен быть больше или равен 6 символам!'
+          (v && v.length >= 12) ||
+					'Пароль должен быть больше или равен 12 символам!'
       ],
       confirmPassRules: [
         v => !!v || 'Пароль - обязательный параметр',
@@ -78,24 +83,33 @@ export default {
       ]
     }
   },
+
+
   computed: {
     loading() {
       return this.$store.getters.loading
     }
   },
+
+
   methods: {
-    onSubmit() {
+    async onSubmit() {
       if (this.$refs.form.validate()) {
+
         const user = {
           email: this.email,
           password: this.password
         }
-        this.$store
-          .dispatch('registerUser', user)
-          .then(() => {
-            window.location.replace('/')
-          })
-          .catch(() => {})
+
+
+        try {
+          await this.$store.dispatch('auth/register', user)
+          this.$router.push({ name: "Dashboard" })
+        } catch (err) {
+          this.$notify({ type: "error", message: err.response?.data?.message })
+        }
+        
+          
       }
     }
   }

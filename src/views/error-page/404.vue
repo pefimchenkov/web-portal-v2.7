@@ -10,11 +10,13 @@
       <div class="bullshit">
         <div class="bullshit__oops">Опачки!</div>
         <div class="bullshit__info">Все права принадлежат
-          <a style="color:#20a0ff" href="https://www.tsd-group.ru" target="_blank">ТСД ГРУПП</a>
+          <a style="color:#20a0ff" href="https://atlas-pro24.ru" target="_blank">ООО "АТЛАС-ПРО"</a>
         </div>
         <div class="bullshit__headline">{{ message }}</div>
         <div class="bullshit__info">Убедитесь, что вы ввели правильный URL или у Вас все разрешения для доступа к этому ресурсу!</div>
-        <a class="bullshit__return-home" @click.prevent="$router.go(-1)">Вернуться назад</a>
+        <a class="bullshit__return-home" @click.prevent="$router.go(-1)">
+          <p>Назад</p>
+        </a>
       </div>
     </div>
   </div>

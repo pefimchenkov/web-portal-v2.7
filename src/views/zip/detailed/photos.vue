@@ -37,7 +37,7 @@
 
 <script>
 
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import { AclRule } from 'vue-acl'
 
 export default {
@@ -71,8 +71,12 @@ export default {
           .then(response => {
             delete response.data.success
             setTimeout(() => {
-              this.photos.push(response.data.url)
-              this.photosWidth.push(response.data)
+              
+              // eslint-disable-next-line vue/no-mutating-props
+              this.photos?.push(response.data.url)
+              
+              // eslint-disable-next-line vue/no-mutating-props
+              this.photosWidth?.push(response.data)
 
               this.$store.dispatch('setData', response.data.success)
               this.$router.push('/zip/' + this.id)

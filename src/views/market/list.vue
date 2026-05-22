@@ -1,142 +1,146 @@
 <template>
-  <v-container v-loading="(ZipList.length === 0)" :fill-height="(ZipList.length === 0)" fluid>
+  <v-container v-loading="(!state.tableData.length || state.loadingForRemove)" :fill-height="!state.tableData.length" fluid>
 
-    <ConfirmWithCount ref="confirm_with_count" @Count="addItemToBasket" />
 
-    <v-dialog
-      v-model="showForFilter"
-      width="600"
-      @click="showForFilter = false"
+    <Dialog
+      v-if="state.dialog"
+      ref="dialogForm"
+      :show="state.dialog"
+      :loading="state.loading"
+      :items="state.dialogItems"
+      :options="state.dialogOptions"
+      :action="state.action"
+      :data="state.editedItem"
+      @add="addMarket"
+      @update="updateMarket"
+      @watchForm="watchForm"
+      @closeDialog="closeDialog"
     >
-      <v-card
-        color="primary"
-        dark
-      >
-        <v-card-text>
-          {{ infoText }}
-          <v-progress-linear
-            indeterminate
-            color="white"
-            class="mb-0"
-          />
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+      <template #default>
+        <el-row style="margin: 5px auto; background: #f0f0f0; border-radius: 5px; padding: 10px">
+          <el-col :span="12">
+            <div style="display: flex">
+              <span style="width: 35%; text-align: center">Себестоимость</span>
+              <el-input v-model="state.stockPrice" size="mini" readonly style="width: 65%" />
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div style="display: flex">
+              <span style="width: 35%; text-align: center">Клиентская</span>
+              <el-input v-model="state.clientPrice" size="mini" readonly style="width: 65%" />
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div style="display: flex">
+              <span style="width: 35%; text-align: center">Партнёрская</span>
+              <el-input v-model="state.partnerPrice" size="mini" readonly style="width: 65%" />
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div style="display: flex">
+              <span style="width: 35%; text-align: center">Оптовая</span>
+              <el-input v-model="state.optPrice" size="mini" readonly style="width: 65%" />
+            </div>
+          </el-col>
+        </el-row>
+      </template>
+    </Dialog>
 
-    <v-dialog
-      v-model="dialogTechProps"
+
+
+
+    <!-- Добавление в корзину (кол-во)  -->
+
+    <ConfirmWithCount
+      ref="confirm_with_count"
+      @Count="addItemToBasket"
+    />
+
+    <!-- Тех. характеристики -->
+    <el-dialog
+      :visible.sync="state.dialogTechProps"
       width="1000"
     >
-      <TechProps :key="editedItem.marketid" :market-item="editedItem" />
-    </v-dialog>
+      <TechProps :key="state.editedItem.marketid" :market-item="state.editedItem" />
+    </el-dialog>
 
-    <!--  Создание именованного фильтра  -->
+    <v-toolbar color="#eaeff5" class="text-lg-right elevation-2 mb-1" dense style="width: 100%">
+      <v-toolbar-title>Маркет</v-toolbar-title>
+      <v-divider class="mx-3" inset vertical />
 
-    <v-dialog v-model="showFilterName" width="500px">
-      <v-card class="pa-3">
-        <v-card-title class="headline">Введите название для фильтра</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="filterName" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <el-button
-            size="small"
-            plain
-            @click="showFilterName = false"
-          >
-            Отменить
-          </el-button>
-          <el-button
-            size="small"
-            plain
-            @click="createFilter(filterName)"
-          >
-            Сохранить
-          </el-button>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <!-- Настройки таблицы -->
+      <el-checkbox
+        v-model="state.showHeader"
+      >Заголовок
+      </el-checkbox>
+      <el-checkbox
+        v-model="state.showSortable"
+      >Сортировка
+      </el-checkbox>
+      <el-checkbox
+        v-model="state.textAlign"
+      >Текст по центру
+      </el-checkbox>
+      <v-divider class="mx-3" inset vertical />
 
-    <!-- ================================ -->
+      <v-spacer />
+      
 
-    <v-dialog v-model="dialogImg" :max-width="imageWidth">
-      <v-img v-if="selectedImage" width="100%" :src="selectedImage" @click.stop="closeImg()" />
-    </v-dialog>
-
-    <v-toolbar
-      v-show="ZipList.length > 0"
-      color="grey lighten-3"
-      class="elevation-2 mb-1"
-      dense
-      :height="$vuetify.breakpoint.smAndDown ? `100` : ``"
-    >
-
-      <!-------------------- Открепить / Закрепить --------------->
-
-      <v-checkbox
-        v-model="checkBox"
-        hide-details
-        :label="checkBox ? 'Открепить' : 'Закрепить'"
-        class="mr-10"
-      />
-
-      <!----------------------- КУРСЫ ВАЛЮТ ---------------------->
-
+      <!--------- Курсы валют ---------->
       <ExchangeRates />
       <v-spacer />
 
-      <!-- ================= МЕНЮ ДЕЙСТВИЙ ==================== -->
+      <v-divider class="mx-3" inset vertical />
 
+      <!-- Заказы (магазин) -->
+
+      <Basket
+        v-if="basket.length"
+        :show="state.showBasket"
+        @close="state.showBasket = false"
+        @updateFromBasket="updateFromBasket"
+        class="mr-3"
+      />
+
+      <Orders
+        v-if="orders.length"
+        :show="state.showOrders"
+        :update-from-basket="state.isUpdateFromBasket"
+        @close="state.showOrders = false"
+        @resetBasketUpdate="state.isUpdateFromBasket = false"
+        class="mr-3"
+      />
+      
+
+
+
+      <!-- МЕНЮ ДЕЙСТВИЙ -->
       <el-dropdown trigger="click" :hide-on-click="false">
-        <el-button icon="el-icon-s-operation">
-          Действия 123
+        <el-button size="mini" icon="el-icon-s-operation">
+          Действия
         </el-button>
-
         <el-dropdown-menu slot="dropdown">
-
           <el-dropdown-item>
-            <TableColumns :headers="visibleHeaders" name="marketColumn" />
+            <TableColumns
+              v-if="state.tableHeaders.length"
+              :headers="state.tableHeaders"
+              name="marketColumn"
+            />
           </el-dropdown-item>
+          <el-dropdown-item>
 
-          <el-dropdown-item v-if="$acl.check('Excel')">
-            <el-dropdown trigger="click">
-              <div>Экспорт в excel</div>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item>
-                  <download-excel
-                    :fields="getJsonFieldsAll"
-                    :data="ZipList"
-                    name="zip_prices.xls"
-                  >Все значения
-                  </download-excel>
-                </el-dropdown-item>
-                <el-dropdown-item>
-                  <download-excel
-                    :fields="json_fields"
-                    :fetch="getExel"
-                    name="zip_prices.xls"
-                  >Текущий фильтр
-                  </download-excel>
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </el-dropdown>
+            <!-- Экспорт -->
+            <ExportExcel
+              :list="state.filteredTableData"
+              type="plain"
+              :header="selectedHeaders.map(header => header.value)"
+              :ru-header="selectedHeaders.map(header => header.text)"
+              :table-name="exportFileName"
+            />
           </el-dropdown-item>
-
-        </el-dropdown-menu>
-      </el-dropdown>
-
-      <el-dropdown trigger="click" :hide-on-click="false">
-        <el-button>
-          <svg-icon icon-class="filter" />
-          Фильтры
-        </el-button>
-
-        <el-dropdown-menu slot="dropdown">
-
           <el-dropdown-item>
             <v-menu
-              v-model="menu_th"
+              v-model="state.menu_th"
               :close-on-content-click="false"
               :nudge-width="100"
               offset-x
@@ -147,1826 +151,739 @@
                 </span>
               </template>
 
-              <MarketFilter :types="AllTypes" @setTpFilter="setTpFilter" @resetTpFilter="resetTpFilter" @setType="setType" />
+              <MarketFilter :types="state.AllTypes" @setTpFilter="setTpFilter" @resetTpFilter="resetTpFilter" @setType="setType" />
 
             </v-menu>
           </el-dropdown-item>
-
-          <el-dropdown-item>
-            <NamedFilters :filters="Filters" @load-filter="loadFilter" @reset-filter="resetFilter" @set-parent-filters="setParentFilters" />
-          </el-dropdown-item>
-
-          <el-dropdown-item>
-            <p @click.stop="resetFilter">Сбросить фильт</p>
-          </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
 
-      <!-- -------  МАГАЗИН -------- -->
+      <v-divider class="mx-3" inset vertical />
 
-      <el-dropdown v-if="(Basket.length > 0 || Orders.length > 0)" trigger="click" :hide-on-click="false" @command="handleCommandOrders">
-        <el-button icon="el-icon-s-cooperation">
-          Заказы
-        </el-button>
-
-        <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item v-if="Basket.length > 0" :hide-on-click="false" command="showBasket">
-            <Basket
-              :show="showBasket"
-              @close="showBasket = false"
-              @updateFromBasket="updateFromBasket"
-            />
-          </el-dropdown-item>
-
-          <el-dropdown-item v-if="Orders.length > 0" :hide-on-click="true" command="showOrders">
-            <Orders
-              :show="showOrders"
-              :update-from-basket="isUpdateFromBasket"
-              @close="showOrders = false"
-              @resetBasketUpdate="isUpdateFromBasket = false"
-            />
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </el-dropdown>
-
-      <!-----------------------------  Основной диалог для редактирования / добавления  =================================----->
-
-      <v-dialog
-        v-model="dialog"
-        persistent
-        width="1000"
-        :disabled="$acl.not.check('Edit')"
-        @keydown.esc="dialog = false"
+      <el-button
+        type="primary"
+        size="mini"
+        class="mr-5"
+        @click="addItem"
       >
-
-        <template #activator="{on}">
-          <el-button type="primary" icon="el-icon-plus" size="small" :disabled="$acl.not.check('Edit')" v-on="$acl.not.check('Edit') ? '' : on" />
-        </template>
-
-        <el-card class="box-card">
-
-          <h4 style="background: lightblue; line-height: 2em; margin-bottom: 5px; text-align: center">
-            {{ formTitle }}
-          </h4>
-
-          <v-container grid-list-md text-center>
-            <v-row justify="center" align="center">
-              <v-col cols="12">
-                <v-combobox
-                  v-if="editedIndex === -1"
-                  ref="element"
-                  v-model="editedItem.elementTYPE"
-                  :rules="ReqRules"
-                  :items="['ЗИП', 'МОДЕЛЬ']"
-                  label="Тип элемента *"
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="8">
-                <v-text-field
-                  ref="price"
-                  v-model="editedItem.marketPRICE"
-                  :value="editedItem.marketPRICE ? editedItem.marketPRICE : editedItem.marketPRICE = '0'"
-                  :readonly="$acl.not.check('Admin')"
-                  :label="$acl.not.check('Admin') ? 'Цена стоковая (права администратора)' : 'Цена стоковая'"
-                  :disabled="$acl.not.check('Admin')"
-                  :rules="priceRules"
-                  required
-                  validation
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="4">
-                <v-combobox
-                  ref="cur"
-                  v-model="editedItem.CUR"
-                  :value="editedItem.CUR ? editedItem.CUR : editedItem.CUR = '₽'"
-                  :items="currency"
-                  :readonly="$acl.not.check('Admin')"
-                  :disabled="$acl.not.check('Admin')"
-                  label="Валюта"
-                  small-chips
-                  required
-                  validation
-                  :rules="ReqRules"
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  ref="ratio"
-                  v-model="editedItem.K1"
-                  :value="editedItem.K1 || 1"
-                  :readonly="$acl.not.check('Admin')"
-                  :disabled="$acl.not.check('Admin')"
-                  :label="$acl.not.check('Admin') ? 'Коэф. себестоимость (права администратора)' : 'Коэф. себестоимость'"
-                  :rules="ratioRules"
-                  required
-                  validation
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  ref="ratio"
-                  v-model="editedItem.K2"
-                  :value="editedItem.K2 || 2.4"
-                  :readonly="$acl.not.check('Admin')"
-                  :disabled="$acl.not.check('Admin')"
-                  :label="$acl.not.check('Admin') ? 'Коэф. продажа (права администратора)' : 'Коэф. продажа'"
-                  :rules="ratioRules"
-                  required
-                  validation
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field v-model="stock" label="Себестоимость, руб." readonly disabled />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field v-model="site" label="Продажа, руб." readonly disabled />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field v-model="partner" label="Партнер, руб." readonly disabled />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field v-model="opt" label="Опт, руб." readonly disabled />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  v-model="editedItem.marketPN"
-                  label="Партномер"
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-autocomplete
-                  ref="supp"
-                  v-model="editedItem.marketSUPPLIER"
-                  :items="suppliers"
-                  label="* Производитель"
-                  required
-                  validation
-                  :rules="ReqRules"
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="editedItem.marketDESC" label="Описание ТХ" />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  ref="article"
-                  v-model="editedItem.marketART"
-                  label="1C Арт"
-                  :rules="artRules"
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-autocomplete
-                  ref="cond"
-                  v-model="editedItem.marketCOND"
-                  :items="conditions"
-                  label="* Состояние"
-                  required
-                  validation
-                  :rules="ReqRules"
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col v-if="editedItem.elementTYPE === 'ЗИП' || editedItem.elementTYPE === 1 " cols="12">
-                <v-combobox
-                  ref="objZIP"
-                  v-model="editedItem.ZIP"
-                  :items="Zip"
-                  :item-text="namePlusArt"
-                  item-value="ID"
-                  label="* ЗИП"
-                  :rules="ObjRules"
-                  required
-                  validation
-                  return-object
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col v-if="editedItem.elementTYPE === 'МОДЕЛЬ' || editedItem.elementTYPE === 2" cols="12">
-                <v-autocomplete
-                  ref="objMODELS"
-                  v-model="editedItem.MODELS"
-                  :items="Models"
-                  :item-text="namePlusModel"
-                  label="* МОДЕЛЬ"
-                  :rules="ObjRules"
-                  required
-                  validation
-                  return-object
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-combobox
-                  v-if="editedIndex === -1"
-                  v-model="Parts"
-                  :items="editedItem.MODELS && editedItem.MODELS.ID ? ModelMarketList : ZipList"
-                  :item-text="idNameTypeArtPNModels"
-                  label="СОСТАВ"
-                  :search-input.sync="search"
-                  multiple
-                  small-chips
-                  deletable-chips
-                  clearable
-                  hide-selected
-                  return-object
-                  :allow-overflow="true"
-                  class="font-weight-medium"
-                  hide-details
-                >
-                  <template #no-data>
-                    <v-list-item>
-                      <v-list-item-content>
-                        <v-list-item-title>
-                          Результат поиска "<strong>{{ search }}</strong>" отсутствует. Пожалуйста, вводите правильные данные!
-                        </v-list-item-title>
-                      </v-list-item-content>
-                    </v-list-item>
-                  </template>
-                  <template #selection="{ item, parent}">
-                    <v-chip
-                      color="blue lighten-4"
-                      label
-                      small
-                    >
-                      {{ idNameTypeArtPNModels(item) }}
-                    </v-chip>
-                    <v-icon
-                      small
-                      @click="parent.selectItem(item)"
-                    >close</v-icon>
-                  </template>
-                </v-combobox>
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  ref="pack"
-                  v-model="editedItem.marketPack"
-                  label="Кол-во в упаковке"
-                  :rules="packRules"
-                  clearable
-                  validation
-                  regular
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="5" style="margin: auto">
-                <el-switch
-                  v-model="editedItem.marketSITE"
-                  :active-value="1"
-                  :inactive-value="0"
-                  :readonly="$acl.not.check('Admin')"
-                  :inactive-text="$acl.not.check('Admin') ? 'Разместить на сайте (нужны права администратора)' : 'Разместить на сайте'"
-                  :active-text="$acl.not.check('Admin') ? 'Убрать с сайта (права администратора)' : 'Убрать с сайта '"
-                  :disabled="$acl.not.check('Admin')"
-                />
-              </v-col>
-
-              <v-col cols="12" class="text-center">
-                <el-button
-                  type="warning"
-                  plain
-                  class="mr-3"
-                  :disabled="localLoading"
-                  @click.native="dialog = false"
-                >Отмена
-                </el-button>
-                <el-button
-                  type="success"
-                  plain
-                  :disabled="localLoading"
-                  :loading="localLoading"
-                  @click.native="save"
-                >Сохранить
-                </el-button>
-              </v-col>
-
-            </v-row>
-          </v-container>
-        </el-card>
-      </v-dialog>
+        Добавить
+      </el-button>
 
     </v-toolbar>
     <v-spacer />
 
-    <h4 v-if="activeFilterName" class="text-lg-center mb-2">Применён фильтр - <span class="info--text">{{ activeFilterName }} </span> </h4>
-
-    <v-container v-loading="loading" class="ma-0 pa-0" fluid>
-
-      <v-data-table
-        ref="marketTable"
-        :headers="computedHeaders"
-        :items="ZipList"
-        :fixed-header="checkBox"
-        :height="checkBox ? WindowHeight : null"
-        dense
-        calculate-widths
-        item-key="marketid"
-        :mobile-breakpoint="750"
-        sort-by="marketid"
-        sort-desc
-        class="elevation-2"
-        :footer-props="{
-          itemsPerPageText: 'Строк на странице',
-          itemsPerPageOptions: [25,100,250],
-          showFirstLastPage: true
-        }"
+    <el-table
+      v-if="state.tableData.length"
+      :key="state.tableData.length"
+      ref="marketTable"
+      :data="state.paginatedTableData"
+      :max-height="state.showHeader ? state.WindowHeight : ''"
+      border
+      stripe
+      fit
+      lazy
+      row-key="marketid"
+      size="mini"
+      :header-cell-style="{ background: '#f3f3f3', color: '#6e6e6e' }"
+      style="width: 100%; height: 100%"
+      @sort-change="customSort"
+    >
+      <!-- :sortable="(`sortable` in templateHeaders[idx] && state.showSortable) ? column.sortable : false" -->
+      <el-table-column
+        v-for="(column, idx) in selectedHeaders"
+        :key="column.id"
+        :prop="column.value"
+        :label="column.text"
+        :align="column.align || (state.textAlign ? 'center' : 'left')"
+        :width="column.width"
+        :fixed="column.fixed"
+        resizable
+        :sortable="
+          Object.hasOwn(state.templateHeaders[idx], 'sortable') && state.showSortable
+            ? column.sortable
+            : false
+        "
+        show-overflow-tooltip
+        :formatter="column.formatter ? null : formatterData"
       >
-
-        <!-- ------------------------Строка горизонтальных фильров --------------------- -->
-
-        <template v-if="mobileView" #[`body.prepend`]>
-          <tr>
-            <td
-              v-for="header in computedHeaders"
-              :key="header.marketid"
-              class="py-2"
-            >
-              <v-switch
-                v-if="header.value === 'marketPHOTO'"
-                v-model="filters.searchMarketPhoto"
-                @change="fillColumnPhoto"
-              />
-              <v-text-field
-                v-if="header.value === 'marketid'"
-                v-model="filters.searchMarketID"
-              />
-              <v-text-field
-                v-if="header.value === 'marketID'"
-                v-model="filters.searchMarketZipID"
-              />
-              <v-select
-                v-if="header.value === 'elementTYPE'"
-                v-model="filters.searchMarketElementTYPE"
-                :items="['ЗИП', 'Модель', 'Не определён']"
-                clearable
-              />
-              <v-select
-                v-if="header.value === 'marketPARTS'"
-                v-model="filters.searchMarketParts"
-                :items="['c подтверждением', 'без подтверждения', 'нет']"
-                clearable
-                multiple
-              />
-              <v-autocomplete
-                v-if="header.value === 'marketTYPE'"
-                v-model="filters.searchMarketType"
-                :items="AllTypes"
-                item-text="name"
-                autocomplete
-                clearable
-                hide-details
-                class="pb-5"
-              />
-              <v-text-field
-                v-if="header.value === 'marketNAME'"
-                v-model="filters.searchMarketName"
-                clearable
-                type="text"
-              />
-              <v-switch
-                v-if="header.value === 'marketTH'"
-                v-model="filters.activateTH"
-              />
-              <v-autocomplete
-                v-if="header.value === 'marketMODELS'"
-                v-model="filters.searchMarketModel"
-                :items="Models"
-                multiple
-                item-text="MODEL"
-                clearable
-                chips
-                deletable-chips
-                hide-details
-                class="pb-5"
-              />
-              <v-text-field
-                v-if="header.value === 'marketPN'"
-                v-model="filters.searchMarketPN"
-                clearable
-                type="text"
-              />
-              <v-autocomplete
-                v-if="header.value === 'marketSUPPLIER'"
-                v-model="filters.searchMarketSupp"
-                multiple
-                :items="marketSupp"
-                deletable-chips
-                clearable
-                chips
-              />
-              <v-autocomplete
-                v-if="header.value === 'marketCOND'"
-                v-model="filters.searchMarketCond"
-                multiple
-                :items="marketCond"
-                deletable-chips
-                clearable
-                chips
-              />
-              <v-text-field
-                v-if="header.value === 'marketART'"
-                v-model="filters.searchMarketART"
-                type="text"
-              />
-              <v-text-field
-                v-if="header.value === 'marketEMAIL'"
-                v-model="filters.searchMarketEmail"
-                clearable
-                type="text"
-              />
-              <template v-if="header.value === 'marketDATE'">
-                <v-menu
-                  ref="menuMarketDate"
-                  v-model="menuMarketDate"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                >
-                  <template #activator="{ on }">
-                    <v-icon :color="filters.searchMarketDate !== null && filters.searchMarketDate.length > 0 ? `green darken-2` : ``" v-on="on">event</v-icon>
-                  </template>
-                  <v-date-picker v-model="filters.searchMarketDate" multiple no-title>
-                    <div class="flex-grow-1" />
-                    <v-btn text color="primary" @click="menuMarketDate = false">Отмена</v-btn>
-                    <v-btn text color="primary" @click="$refs.menuMarketDate[0].save(filters.searchMarketDate)">OK</v-btn>
-                  </v-date-picker>
-                </v-menu>
-                <v-icon v-if="filters.searchMarketDate !== null && filters.searchMarketDate.length > 0" @click="filters.searchMarketDate = []">clear</v-icon>
-              </template>
-
-              <v-switch
-                v-if="header.value === 'marketSITE'"
-                v-model="filters.searchMarketSite"
-                :value="filters.searchMarketSite"
-              />
-
-            </td>
-          </tr>
+        <!-- слот для кастомного форматирования данных строки -->
+        <template v-if="column.formatter" #default="{ row }">
+          <component
+            :is="column.formatter"
+            v-if="column.formatter"
+            :actions="column.actions"
+            :row="row"
+            :column="column.value"
+            :id="row.marketID"
+            @update="editItem"
+            @remove="removeMarket"
+            @openTH="editTechProps"
+            @addToBasket="openBasketDialog"
+            @detail="detail"
+          />
+          <div v-else>
+            {{ row[column.value] }}
+          </div>
         </template>
 
-        <!-- ---------------------- Преобразованные данные ------------------------ -->
-
-        <template #[`item.marketPHOTO`]="{ item }">
-          <img
-            v-if="loadPhoto(item)"
-            v-lazyload
-            :data-src="loadPhoto(item)"
-            :style="`max-width:100px`"
-            class="xlsx_btn"
-            @click="zoom($event, loadPhoto(item))"
-          >
+        <!-- Заголовок таблицы c фильтрами -->
+        <template slot="header" slot-scope="scope">
+          <div style="word-break: keep-all;">{{ column.text }}</div>
+          <TableFilters
+            v-if="state.tableData.length > 0"
+            :reference="reference"
+            :data="state.tableData"
+            :options="state.filtersOptions"
+            :filters="state.filters"
+            :types="{
+              Input: ['marketNAME', 'marketPN', 'marketART'],
+              InputNumber: ['marketid', 'marketID'],
+              Select: ['elementTYPE', 'marketTYPE', 'marketPARTS', 'marketTYPE', 'marketSUPPLIER', 'marketCOND', 'marketSUPPLIER'],
+              MultiSelect: ['marketMODELS', 'marketEMAIL'],
+              Date: ['marketDATE'],
+              CheckBox: ['marketPHOTO', 'marketTH', 'marketSITE', 'marketIM', 'marketABS'],
+              Switch: [],
+              Clear: ['actions']
+            }"
+            :formatters="state.formatters"
+            :property="scope.column.property"
+            @updateData="updateData"
+            @updateFilters="updateFilters"
+            @resetFilters="resetFilters"
+          />
         </template>
 
-        <template #[`item.marketPARTS`]="{ item }">
+      </el-table-column>
 
-          <span>{{ item.marketPARTS }}</span>
-          <v-icon v-if="item.marketPARTS > 0 && item.Approved === 1" color="success" class="ml-1">
-            mdi-check-decagram
-          </v-icon>
-          <v-icon v-if="item.marketPARTS > 0 && item.Approved === 2" color="#ccc" class="ml-1">
-            mdi-check-decagram
-          </v-icon>
+    </el-table>
 
-        </template>
+    <Pagination
+      v-show="state.total > 0"
+      :total="state.total"
+      :page.sync="state.listQuery.page"
+      :limit.sync="state.listQuery.limit"
+      @pagination="getPaginationData"
+    />
 
-        <template #[`item.marketid`]="{ item }">
-          <td :style="`background-color:${ratingColor(item.marketRating)}; border-radius: 5px; color: ${item.marketRating === 1 || item.marketRating === 5 ? '#fff' : '#000'}`" class="px-2 py-1">{{ item.marketid }}</td>
-        </template>
-
-        <template #[`item.marketID`]="{ item }">
-          <v-icon v-if="item.elementTYPE === 1 && item.marketPARTS === 0" class="mr-1">memory</v-icon>
-
-          <v-icon v-if="item.elementTYPE === 1 && item.marketPARTS > 0" class="mr-1">mdi-cogs</v-icon>
-
-          <v-icon v-if="item.elementTYPE === 2 && item.marketPARTS === 0" class="mr-1">phone_android</v-icon>
-
-          <v-icon v-if="item.elementTYPE === 2 && item.marketPARTS > 0" class="mr-1">phonelink_setup</v-icon>
-
-          <span v-if="item.elementTYPE === 1 && item.marketINPARTS === 1" class="font-weight-black xlsx_btn" @click="gotoMainZip(item.marketID)"> ( {{ item.marketID }} )</span>
-          <span v-else-if="item.elementTYPE === 1 && item.marketINPARTS === 0" class="xlsx_btn" @click="gotoMainZip(item.marketID)">{{ item.marketID }}</span>
-          <span v-if="item.elementTYPE === 2" class="xlsx_btn" @click="gotoMainModels(item.marketID)">{{ item.marketID }}</span>
-
-        </template>
-
-        <template #[`item.elementTYPE`]="{ item }">
-          {{ transformElementType(item.elementTYPE) }}
-        </template>
-
-        <template #[`item.marketTH`]="{ }">
-          {{ filters.searchMarketTH.length > 0 ? filters.searchMarketTH.map(i => i.name).join(', ') : '' }}
-        </template>
-
-        <template #[`item.marketpriceSTOCK`]="{ item }">
-          {{ item.priceSTOCK }}
-          <v-icon v-if="item.priceSTOCK" color="blue" small>mdi-currency-rub</v-icon>
-        </template>
-        <template #[`item.marketpriceSITE`]="{ item }">
-          {{ item.priceCLIENT }}
-          <v-icon v-if="item.priceCLIENT" color="blue" small>mdi-currency-rub</v-icon>
-        </template>
-        <template #[`item.marketpricePART`]="{ item }">
-          {{ item.pricePART }}
-          <v-icon v-if="item.pricePART" color="blue" small>mdi-currency-rub</v-icon>
-        </template>
-        <template #[`item.marketpriceOPT`]="{ item }">
-          {{ item.priceOPT }}
-          <v-icon v-if="item.priceOPT" color="blue" small>mdi-currency-rub</v-icon>
-        </template>
-        <template #[`item.marketPRICE`]="{ item }">
-          {{ item.marketPRICE }}
-          <v-icon v-if="item.CUR === '€'" color="warning" small>mdi-currency-eur</v-icon>
-          <v-icon v-if="item.CUR === '$'" color="success" small>mdi-currency-usd</v-icon>
-          <v-icon v-if="item.CUR === '₽'" color="blue" small>mdi-currency-rub</v-icon>
-        </template>
-
-        <template #[`item.sebT`]="{ item }">
-          <span :style="`${(((+item.priceSTOCK / +item.sebT) > 1.1) || ((1 - (+item.priceSTOCK / +item.sebT )) > 0.1)) && (item.priceSTOCK && item.sebT) ? 'color: red' : ''}`">
-            {{ item.sebT }}
-          </span>
-        </template>
-
-        <template #[`item.sebA`]="{ item }">
-          <span :style="`${(((+item.priceSTOCK / +item.sebA) > 1.1) || ((1 - (+item.priceSTOCK / +item.sebA )) > 0.1)) && (item.priceSTOCK && item.sebA) ? 'color: red' : ''}`">
-            {{ item.sebA }}
-          </span>
-        </template>
-
-        <template #[`item.marketDATE`]="{ item }">
-          {{ new Date(item.marketDATE).toLocaleDateString('ru') }}
-        </template>
-
-        <template #[`item.marketEMAIL`]="{ item }">
-          {{ item.marketEMAIL | getUserName }}
-        </template>
-
-        <template #[`item.marketSITE`]="{ item }">
-          <v-icon v-if="item.marketSITE === 1">mdi-web</v-icon>
-        </template>
-
-        <template #[`item.marketSKLAD`]="{ item }">
-          <v-tooltip top>
-            <template #activator="{on}">
-              <span v-on="on">{{ item.marketSKLAD }}</span>
-            </template>
-            <span>{{ 'Дата обновления -' + new Date(item.skladDATE).toLocaleDateString('ru-Ru', { hour: 'numeric', minute: 'numeric' }) }}</span>
-          </v-tooltip>
-        </template>
-
-        <!--     Меню действий    -->
-
-        <template #[`item.action`]="{ item }">
-          <v-menu
-            bottom
-            left
-          >
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                v-bind="attrs"
-                v-on="on"
-              >
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <v-list-item v-if="$acl.check('Edit')" small class="mr-2" @click="editItem(item)">Редактировать</v-list-item>
-              <v-list-item v-if="$acl.check('Delete')" small @click="deleteItem(item)">Удалить</v-list-item>
-              <v-list-item v-if="$acl.check('BasketAccess') || $acl.check('Agent')" small @click="itemToBasket(item)">Добавить в заказ</v-list-item>
-              <v-list-item v-if="$acl.check('Edit')" small @click="editTechProps(item)">Технические характеристики</v-list-item>
-              <v-list-item v-if="$acl.check('Edit') || $acl.check('LeadEngineer') || $acl.check('Financier') || $acl.check('Agent')" text fab small left :to="'/market/' + item.marketid">Подробнее</v-list-item>
-            </v-list>
-          </v-menu>
-        </template>
-
-        <!-- .................... -->
-
-      </v-data-table>
-    </v-container>
   </v-container>
 </template>
 
-<script>
-import Api from '@/services/Api'
-import { mapGetters, mapState } from 'vuex'
+<script setup>
 
-import ExchangeRates from './components/exchange-rates'
-import Basket from './components/basket.vue'
-import Orders from './components/orders.vue'
-import TechProps from './components/tech-props.vue'
-import MarketFilter from './components/market-filter'
-import ConfirmWithCount from '@/components/shared/ConfirmWithCount.vue'
+  import Vue, { computed, ref, reactive, watch, onBeforeMount, onBeforeUnmount, onMounted, nextTick } from 'vue'
+  import store from '@/store'
+  import router from '@/router' 
+  import variables from '@/styles/variables.scss'
+  import { Notification, MessageBox } from 'element-ui'
+  import ExportExcel from '@/components/ExportExcel'
 
-import moment from 'moment'
-import _ from 'lodash'
-import GetConfig from '@/services/GetConfig'
-import { createTechProps } from '@/helpers/market/tech-props-filter'
-import { getUserName } from '@/filters/jira-users'
-import { add, update, remove, checkInRemonts } from '@/api/market'
-import { AclRule } from 'vue-acl'
+  import { createTechProps } from '@/helpers/market/tech-props-filter'
+  import { getUserName } from '@/filters/jira-users'
+  import { add, update, remove, checkInRemonts, getMarketParts } from '@/api/market'
+  // import { AclRule } from 'vue-acl'
 
-import TableColumns from '@/components/DataTable/columns.vue'
-import NamedFilters from '@/components/shared/NamedFilters.vue'
+  import { createHeaders, headersToObject, setRemoteCustomSort, createSelectOptionsFromTableData, createSelectOptionsFromSpecificData } from '@/components/DataTable/utils.js'
+  import { reference, exportFileName, templateHeaders, elementTypes, dialogItems, dialogOptions } from './data.js'
+  import { getElementType, isPartsInElement, setTHInElement, showElementTypeDialogItems,
+    showSomeDialogItems, hideSomeDialogItems, calcStockPrice, calcClientPrice, calcPartnerPrice, calcOptPrice } from './utils.js'
 
-export default {
+  import { filterHandler } from '@/workers/filters.js'
+ 
 
-  components: {
-    Basket,
-    Orders,
-    TechProps,
-    ExchangeRates,
-    MarketFilter,
-    ConfirmWithCount,
-    TableColumns,
-    NamedFilters
-  },
+  import Dialog from '@/components/Dialog'
+  import Pagination from '@/components/Pagination'
+  import TableFilters from '@/components/TableFilters/index.vue'
+  import TableColumns from '@/components/DataTable/columns.vue'
+  import ConfirmWithCount from '@/components/shared/ConfirmWithCount.vue'
+  import MarketFilter from './components/market-filter'
+  import ExchangeRates from './components/exchange-rates'
+  import TechProps from './components/tech-props.vue'
+  import Orders from './components/orders.vue'
+  import Basket from './components/basket.vue'
 
-  filters: {
+  const state = reactive({
+    tableData: [],
+    tableHeaders: [],
+    filteredTableData: [],
+    paginatedTableData: [],
+    filtersOptions: {},
+    filters: {},
+    json_fields: {},
+    editedItem: {},
+    prevItem: {},
+    formatters: [],
+    menuMarketDate: false,
+    loading: false,
+    loadingForRemove: false,
+    key: Math.random(1, 9) * 1000000,
+    listQuery: { page: 1, limit: 25 },
+    stockPrice: null,
+    clientPrice: null,
+    partnerPrice: null,
+    optPrice: null,
+    total: 0,
+    showHeader: true,
+    showSortable: false,
+    textAlign: true,
+    maxWidth: '100px',
+    menu: false,
+    menu_th: false,
+    localLoading: false,
+    ModelMarketList: [],
+    AllTypes: [],
+    Parts: [],
+    CurrentOrder: [],
+    TechProperties: [],
+    elementTypes,
+    WindowHeight: null,
+    showOrders: false,
+    showBasket: false,
+    isUpdateFromBasket: false,
+    dialog: false,
+    dialogTechProps: false,
+    templateHeaders,
+    reference,
+    headersToObject,
+    exportFileName,
+    dialogItems,
+    dialogOptions,
+    variables
+  })
 
-    getUserName
 
-  },
+  const confirm_with_count = ref('');
+  const dialogForm = ref('');
+  const marketTable = ref(null);
 
-  data() {
-    return {
-      menuMarketDate: false,
-      loading: false,
 
-      filters: {
-        searchMarketID: null,
-        searchMarketZipID: null,
-        searchMarketElementTYPE: null,
-        searchMarketType: null,
-        searchMarketName: null,
-        searchMarketModel: [],
-        searchMarketPN: null,
-        searchMarketCond: [],
-        searchMarketSupp: [],
-        searchMarketART: null,
-        searchMarketEmail: null,
-        searchMarketDate: [],
-        searchMarketSite: false,
-        searchMarketParts: [],
-        searchMarketElement: null,
-        searchMarketTH: [],
-        activateTH: false
-      },
 
-      multiSelects: {
-        marketSupp: [],
-        marketCond: []
-      },
+  const selectedHeaders = computed(() => state.tableHeaders.filter(header => header.selected));
+  const market = computed(() => store.getters['market_new/market']);
+  const user = computed(() => store.getters['auth/currentUser']);
+  const Zip = computed(() => store.state.zip.Zip);
+  const Models = computed(() => store.state.models.models);
+  const ModelsType = computed(() => store.state.models.types);
+  const ProductsType = computed(() => store.state.products_type.ProductsType);
+  const Conditions = computed(() => store.state.conditions.Conditions);
+  const Suppliers = computed(() => store.state.suppliers.Suppliers);
+  const Currency = computed(() => store.state.currency.Currency);
+  const MarketImg = computed(() => store.state.marketImg.MarketImg);
 
-      infoText: '',
-      screenSize: 80,
-      maxWidth: '100px',
-      filterText: 'Нажмите для активации фильтра',
+  console.log('Currency', Currency.value)
 
-      ZipList: [],
-      ModelMarketList: [],
-      AllTypes: [],
-      Parts: [],
-      Filters: [],
-      CurrentOrder: [],
-      TechProperties: [],
-      WindowHeight: null,
+  const isDialogVisible = computed(() => {
+    return (!!Zip.value.length && !!Models.value.length &&  !!ModelsType.value.length && !!ProductsType.value.length && !!Conditions.value.length && !!Suppliers.value.length)
+  });
 
-      search: '',
-      selectedImage: null,
-      imageWidth: '',
-      filtered: '',
-      showOrders: false,
-      showBasket: false,
-      isUpdateFromBasket: false,
-      showForFilter: false,
-      activeFilterName: '',
-      active: 'tab-1',
-      toggle: false,
-      checkBox: true,
-      curs: 1,
+  const orders = computed(() => store.state.market.Orders)
+  const basket = computed(() => store.state.market.Basket)
 
-      dialog: false,
-      dialogImg: false,
-      dialogTechProps: false,
 
-      filterName: '',
-      showFilterName: false,
-      switchFilter: false,
-      menu: false,
-      menu_filter: false,
-      menu_th: false,
-      filterTitle: 'Правка цен',
-      localLoading: false,
 
-      ART_1C: '',
+  watch(() => state.filteredTableData, () => {
+    getPaginationData()
+  }, { deep: true, immediate: true })
 
-      headers: [
-        { text: 'Фото',
-          value: 'marketPHOTO',
-          selected: localStorage.marketPHOTO,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketPhoto) return true
-            return value === this.filters.searchMarketPhoto
-          }
-        },
-        { text: 'Маркет ID',
-          value: 'marketid',
-          selected: localStorage.marketid,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketID) return true
-            return value === +this.filters.searchMarketID
-          }
-        },
-        { text: 'ID Элемента',
-          value: 'marketID',
-          selected: localStorage.marketID,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketZipID) return true
-            return value === +this.filters.searchMarketZipID
-          }
-        },
-        { text: 'Тип Элемента',
-          value: 'elementTYPE',
-          selected: localStorage.elementTYPE,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketElementTYPE) return true
-            if (this.filters.searchMarketElementTYPE === 'ЗИП') return value === 1
-            if (this.filters.searchMarketElementTYPE === 'Модель') return value === 2
-            if (this.filters.searchMarketElementTYPE === 'Не определён') return !value
-          }
-        },
-        { text: 'Состав',
-          value: 'marketPARTS',
-          selected: localStorage.marketPARTS,
-          visible: true,
-          divider: true,
-          align: 'left',
-          filter: (value, search = null, item) => {
-            if (!this.filters.searchMarketParts || !this.filters.searchMarketParts.length) return true
 
-            if (this.filters.searchMarketParts[0] === 'c подтверждением' && this.filters.searchMarketParts.length === 1) return (value > 0 && item.Approved === 1)
-            if (this.filters.searchMarketParts[0] === 'без подтверждения' && this.filters.searchMarketParts.length === 1) return (value > 0 && item.Approved !== 1)
-            if (this.filters.searchMarketParts[0] === 'нет' && this.filters.searchMarketParts.length === 1) return (value === 0)
-            if (['без подтверждения', 'c подтверждением'].includes(this.filters.searchMarketParts.find(i => i)) && this.filters.searchMarketParts.length > 1) return (value > 0)
-          }
-        },
-        { text: 'Тип',
-          value: 'marketTYPE',
-          selected: localStorage.marketTYPE,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketType) return true
-            if (!value) return false
-            return value.toLowerCase().includes(this.filters.searchMarketType.toLowerCase())
-          }
-        },
-        { text: 'Название',
-          value: 'marketNAME',
-          selected: localStorage.marketNAME,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketName) return true
-            if (!value) return false
-            return value.toLowerCase().includes(this.filters.searchMarketName.toLowerCase())
-          }
-        },
-        { text: 'Описание',
-          value: 'marketDESC',
-          selected: localStorage.marketDESC,
-          visible: true,
-          divider: true
-        },
-        { text: 'ТХ',
-          value: 'marketTH',
-          selected: localStorage.marketTH,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!value) return true
-            if (this.filters.activateTH) {
-              return value.length > 0
-            }
-            return this.filters.searchMarketTH.length > 0
-              ? this.filters.searchMarketTH.every(item => item.find(i => value.includes(i.id)))
-              : true
-          }
-        },
-        { text: 'Модели',
-          value: 'marketMODELS',
-          selected: localStorage.marketMODELS,
-          visible: true,
-          divider: true,
-          width: 190,
-          filter: value => {
-            if (!value) return true
-            return this.filters.searchMarketModel.length === 0
-              ? true
-              : value.split(', ').includes(this.filters.searchMarketModel.find(item => value.includes(item)))
-          }
-        },
-        { text: 'PN',
-          value: 'marketPN',
-          selected: localStorage.marketPN,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketPN) return true
-            if (!value) return false
-            return value.toLowerCase().includes(this.filters.searchMarketPN.toLowerCase())
-          }
-        },
-        { text: 'Производитель',
-          value: 'marketSUPPLIER',
-          selected: localStorage.marketSUPPLIER && this.$acl.not.check('OnlyAgent'),
-          visible: this.$acl.not.check('OnlyAgent'),
-          divider: true,
-          filter: value => {
-            if (this.filters.searchMarketSupp.length === 0) return true
-            if (!value) return false
-            return value.includes(this.filters.searchMarketSupp.find(item => item === value))
-          }
-        },
-        { text: 'Сост',
-          value: 'marketCOND',
-          selected: localStorage.marketCOND,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (this.filters.searchMarketCond.length === 0) return true
-            if (!value) return false
-            return value.includes(this.filters.searchMarketCond.find(item => item === value))
-          }
-        },
-        { text: 'Артикул ТСД',
-          value: 'marketART',
-          selected: localStorage.marketART,
-          visible: true,
-          width: 110,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketART) return true
-            if (!value) return false
-            return value.toLowerCase().includes(this.filters.searchMarketART.toLowerCase())
-          }
-        },
-        { text: 'Кол-во',
-          value: 'marketPack',
-          selected: localStorage.marketPack,
-          visible: true,
-          divider: true
-        },
-        { text: 'Стоковая',
-          value: 'marketPRICE',
-          selected: localStorage.marketPRICE && this.$acl.check('Financier'),
-          visible: this.$acl.check('Financier') || this.$acl.check('LeadEngineer'),
-          divider: true
-        },
-        { text: 'Себес (₽)',
-          value: 'priceSTOCK',
-          selected: localStorage.marketpriceSTOCK && this.$acl.check('Manager'),
-          visible: this.$acl.check('Manager'),
-          divider: true
-        },
-        { text: 'Себ 1cТ',
-          value: 'sebT',
-          selected: localStorage.marketpriceSTOCK && this.$acl.check('Manager'),
-          visible: this.$acl.check('Manager'),
-          divider: true
-        },
-        { text: 'Себ 1cA',
-          value: 'sebA',
-          selected: localStorage.marketpriceSTOCK && this.$acl.check('Manager'),
-          visible: this.$acl.check('Manager'),
-          divider: true
-        },
-        { text: 'Прод (₽)',
-          value: 'priceCLIENT',
-          selected: localStorage.marketpriceCLIENT,
-          visible: true,
-          divider: true },
-        { text: 'Партнёр (₽)',
-          value: 'pricePART',
-          selected: localStorage.marketpricePART,
-          visible: true,
-          divider: true },
-        { text: 'Опт (₽)',
-          value: 'priceOPT',
-          selected: localStorage.marketpriceOPT,
-          visible: true,
-          divider: true },
-        { text: 'Склад ТСД',
-          value: 'marketSKLAD',
-          selected: localStorage.marketSKLAD,
-          visible: true,
-          divider: true },
-        { text: 'Склад Атлас',
-          value: 'marketATLAS',
-          selected: localStorage.marketART_AP,
-          visible: true,
-          divider: true },
-        { text: 'Заказ',
-          value: 'marketZAKAZ',
-          selected: localStorage.marketZAKAZ,
-          visible: true,
-          divider: true },
-        { text: 'Склад ABS',
-          value: 'marketABS',
-          selected: localStorage.marketART_ABS,
-          visible: true,
-          divider: true },
-        { text: 'Склад ИМ',
-          value: 'marketBEIJING',
-          selected: localStorage.marketART_AP,
-          visible: true,
-          divider: true },
-        { text: 'Авт',
-          value: 'marketEMAIL',
-          selected: localStorage.marketEMAIL,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketEmail) return true
-            if (!value) return false
-            return getUserName(value).toLowerCase().includes(this.filters.searchMarketEmail.toLowerCase())
-          }
-        },
-        { text: 'Изменен',
-          value: 'marketDATE',
-          selected: localStorage.marketDATE,
-          visible: true,
-          divider: true,
-          filter: value => {
-            if (!this.filters.searchMarketDate || this.filters.searchMarketDate.length === 0) return true
-            if (!value || isNaN(Date.parse(value))) return false
-            const Arr = this.filters.searchMarketDate.map(item => moment(item).unix())
-            const first = Math.min(...Arr)
-            const last = Math.max(...Arr)
-            return (moment(value).unix() >= first && moment(value).unix() <= last)
-          }
-        },
-        { text: 'Сайт',
-          value: 'marketSITE',
-          selected: localStorage.marketSITE,
-          visible: true,
-          divider: true,
-          filter: value => {
-            value === 1 ? value = true : value = false
-            if (this.filters.searchMarketSite === 'false' || this.filters.searchMarketSite === 'null') {
-              this.filters.searchMarketSite = false
-            }
-            if (this.filters.searchMarketSite === 'true') {
-              this.filters.searchMarketSite = true
-            }
-            if (!this.filters.searchMarketSite) return true
-            return value === this.filters.searchMarketSite
-          }
-        },
-        { text: 'Действия',
-          value: 'action',
-          sortable: false,
-          align: 'center',
-          selected: localStorage.marketEDIT,
-          visible: true,
-          divider: true
+
+  watch(() => state.total, async (val) => {
+    if (val > 0) {
+      await getDataForDialog();
+      setFormattersForOptions();
+
+      if (!basket.value?.length) store.dispatch('getBasket');
+      if (!orders.value?.length) store.dispatch('getOrders');
+    }
+  })
+
+
+
+  onBeforeMount(async() => {
+    state.WindowHeight = window.innerHeight - 190
+    state.tableHeaders = await createHeaders(state.templateHeaders)
+
+    state.filters = JSON.parse(localStorage.getItem(state.reference)) || {};
+
+  })
+
+
+
+  onMounted(async() => {
+    console.time('Компонент создавался: ');
+    if (!MarketImg?.value.length) store.dispatch('getMarketImg');
+    if (!market?.value.length) await store.dispatch('market_new/get');
+
+    if (!state.tableData?.length) getData();
+    init();
+
+
+    updateData();
+    console.timeEnd('Компонент создавался: ');
+  })
+
+
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', state.setScreenHeight);
+  })
+
+
+  
+
+  // ********************************************* МЕТОДЫ *************************************************** //
+
+    async function init() {
+      window.addEventListener('resize', state.setScreenHeight)
+      if (window.location.hash) {
+        const id = window.location.hash.replace(/[^0-9]/gim, '')
+        state.filters['marketID'] = id
+      }
+      state.maxWidth = localStorage.getItem('sizeColName');
+
+    }
+
+
+    /**
+     * Проваливаемся в `Подробнее` по id позиции
+     */
+    function detail(item) {
+      console.log(item)
+      router.push(`/market/${item.marketid}`)
+    }
+
+    /**
+     * Получение основных данных
+     */
+    function getData() {
+      console.time('Загрузка Маркета: ');
+      const photoColumn = state.tableHeaders.find(header => header.value === 'marketPHOTO');
+      
+      state.tableData = market?.value?.map(el => ({
+        ... el,
+        elementTYPE: getElementType(el.elementTYPE),
+        marketEMAIL: getUserName(el.marketEMAIL),
+        marketPARTS: isPartsInElement(el.marketPARTS),
+        marketTH: setTHInElement(el, state.TechProperties),
+        marketPHOTO: photoColumn?.selected ? setPhotoToElement(el) : null
+      }));
+
+      state.TechProperties = createTechProps();
+      console.timeEnd('Загрузка Маркета: ');
+
+      //console.log('tate.tableData', state.tableData)
+    }
+
+
+
+    /* Получение дополнительных данных */
+    async function getDataForDialog() {
+      
+      if (isDialogVisible.value) return;
+
+      await store.dispatch('fetchZip')
+      await store.dispatch('models/models')
+      await store.dispatch('models/types')
+      await store.dispatch('fetchParts')
+      await store.dispatch('fetchProductsType')
+      await store.dispatch('fetchSuppliers')
+      await store.dispatch('fetchConditions')
+      await store.dispatch('getCurrency')
+
+
+      state.dialogItems.forEach(obj => {
+        if (Object.prototype.hasOwnProperty.call(obj, 'options')) {
+          if (obj.value === 'elementTYPE') obj.options = [...elementTypes];
+          if (obj.value === 'marketMODELS') obj.options = [...Models.value];
+          if (obj.value === 'marketSUPPLIER') obj.options = [...Suppliers.value];
+          if (obj.value === 'marketCOND') obj.options = [...Conditions.value];
+          if (obj.value === 'CUR') obj.options = [...Currency.value];
+          if (obj.value === 'ZIP') obj.options = Zip.value.map(item => { return { ...item, name: namePlusArt(item) } });
+          if (obj.value === 'MODEL') obj.options = Models.value.map(item => { return { ...item, name: namePlusModel(item) } });
+          if (obj.value === 'Parts') obj.options = state.tableData.map(obj => { return { ...obj, name: idNameTypeArtPNModels(obj) } });
         }
-      ],
-      editedIndex: -1,
-      marketTitle: '',
+      })
 
-      editedItem: {
+    }
 
-        K1: 1,
-        K2: 2.4,
-        marketPRICE: 0,
-        marketSITE: false,
-        marketPack: 1,
-        CUR: null
+    function setFormattersForOptions() {
 
-      },
-
-      defaultItem: {
-
-        K1: 1,
-        K2: 2.4,
-        marketPRICE: 0,
-        marketSITE: false,
-        marketPack: 1
-
-      },
-
-      priceRules: [
-        v => !!v || 'Стоковая цена - обязательный параметр!',
-        v => /^[0-9.]+$/.test(v) || 'Допускаются только цифры!'
-      ],
-      ratioRules: [
-        v => !!v || 'Коэффициент - обязательный параметр!',
-        v =>
-          /^[0-9.]+$/.test(v) ||
-					'Допускаются только цифры и точка для дробной части!)'
-      ],
-      allArtRules: [
-        v => !!v || 'Артикул - обязательный параметр!',
-        v =>
-          /^[а-яА-ЯёЁa-zA-Z0-9]+$/.test(v) ||
-					'Допускаются только цифры и буквы (латиница и кириллица)!'
-      ],
-      artRules: [
-        function(v) {
-          if (v === undefined || v === '' || v === null) {
-            return true
-          } else {
-            return /^[ТП0-9.]{8,8}$/.test(v) || 'Правильно: Буква ` Т ` кириллицей и 7 цифр!'
-          }
-        },
-        v => this.checkART(v) || 'Такой артикул уже присутствует в БД!'
-      ],
-      ReqRules: [
-        v => !!v || 'Обязательный параметр!'
-      ],
-      ObjRules: [
-        v => !!v || 'Обязательный параметр!',
-        function(v) {
-          if (typeof v === 'object') return true
-          else return 'Не верный формат ввода!'
-        }
-      ],
-      packRules: [
-        function(v) {
-          if (v === undefined || v === '' || v === null) {
-            return true
-          } else {
-            return /^[0-9]+$/.test(v) || 'Допускаются только числа!'
-          }
-        }
-      ],
-      json_fields: {},
-      json_fields_all: {},
-      json_meta: [
-        [
-          {
-            key: 'charset',
-            value: 'utf-8'
-          }
-        ]
+      state.formatters = [
+        { name: 'marketPHOTO' },
+        { name: 'marketTYPE' },
+        { name: 'marketCOND' },
+        { name: 'elementTYPE' },
+        { name: 'marketSUPPLIER' },
+        { name: 'marketEMAIL', },
+        { name: 'marketPARTS' },
+        { name: 'marketMODELS', prop: 'MODEL' }
       ]
-    }
-  },
 
-  computed: {
-    // ...mapGetters(['market/market', 'dollar', 'euro']),
-    ...mapGetters({ market: 'market_new/market', JiraUsers: 'jira_users', dollar: 'dollar', euro: 'euro' }),
-
-    ...mapState({
-      Zip: state => state.zip.Zip,
-      Models: state => state.models.models,
-      ModelsType: state => state.models.types,
-      ProductsType: state => state.products_type.ProductsType,
-      conditions: state => state.conditions.Conditions.map(item => item.name_ru),
-      suppliers: state => state.suppliers.Suppliers.map(item => item.name),
-      currency: state => state.currency.Currency.map(item => item.sign),
-      Orders: state => state.market.Orders,
-      Basket: state => state.market.Basket,
-      MarketImg: state => state.marketImg.MarketImg
-    }),
-
-    mobileView() {
-      switch (this.$vuetify.breakpoint.name) {
-        case 'xs': return false
-        case 'sm': return false
-        default: return true
+      state.filtersOptions = {
+        ...createSelectOptionsFromTableData({ data: state.tableData, columns: state.formatters.filter(i => !i.prop) }),
+        ...createSelectOptionsFromSpecificData({ data: Models?.value, columns: state.formatters.filter(i => i.prop) })
       }
-    },
 
-    getJsonFieldsAll() {
-      const obj = {}
-      this.headers.forEach(item => {
-        obj[item.text] = item.value
-      })
-      return obj
-    },
+      state.AllTypes = [...ModelsType.value.map(i => ({ ...i, element: 2 })), ...ProductsType.value.map(i => ({ ...i, element: 1 }))]
 
-    computedHeaders() {
-      return this.headers.filter(header => header.selected)
-    },
 
-    visibleHeaders() {
-      return this.headers.filter(header => header.visible)
-    },
-
-    loadings() {
-      return this.$store.getters.loadings
-    },
-
-    formTitle() {
-      return this.editedIndex === -1 ? 'Добавление новых цен' : `Редакция Маркета c id ${this.editedItem.marketid} для ${this.marketTitle}`
-    },
-
-    stock() { // себестоимость
-      return Math.round(this.editedItem.K1 * this.editedItem.marketPRICE * this.curs)
-    },
-
-    site() { // продажная
-      return Math.round(this.editedItem.K2 * this.editedItem.marketPRICE * this.curs)
-    },
-
-    partner() { // партнёрская
-      return Math.round(this.editedItem.K2 * this.editedItem.marketPRICE * this.curs * 0.9)
-    },
-
-    opt() { // оптовая
-      return Math.round(this.editedItem.K2 * this.editedItem.marketPRICE * this.curs * 0.8)
-    },
-
-    BasketAccess() {
-      return new AclRule('admin').or('nom').or('basket').generate()
-    },
-
-    Edit() {
-      return new AclRule('admin').or('nom').generate()
-    },
-
-    Delete() {
-      return new AclRule('admin').or('nom').generate()
-    },
-
-    Excel() {
-      return new AclRule('admin').or('crm').generate()
-    },
-
-    userRole() {
-      return this.$store.getters.userRole || 'user'
-    },
-
-    marketSupp() {
-      return _.uniq(this.multiSelects.marketSupp)
-    },
-    marketCond() {
-      return _.uniq(this.multiSelects.marketCond)
-    }
-  },
-
-  watch: {
-    dialog(val) {
-      val || this.close()
-    },
-    dialogImg(val) {
-      val || this.closeImg()
-    },
-    Parts(val) {
-      val.forEach(obj => {
-        if (typeof obj !== 'object') {
-          this.$nextTick(() => val.pop())
-        }
-      })
-    },
-    'editedItem.MODELS': {
-      deep: true,
-      handler(val) {
-        if (val) {
-          if (Object.keys(val).length > 0) {
-            this.getModelMarketList(+val.ID)
-          }
-        }
-      }
-    },
-    'editedItem.elementTYPE': {
-      deep: true,
-      handler(val) {
-        if (val === 'ЗИП' || val === 1) {
-          this.editedItem.MODELS = {}
-        }
-      }
-    },
-    'editedItem.CUR': {
-      deep: true,
-      handler(val) {
-        if (val === '€') this.curs = this.euro
-        if (val === '$') this.curs = this.dollar
-        if (val === '₽') this.curs = 1
-      }
-    }
-  },
-
-  beforeMount() {
-    this.WindowHeight = window.innerHeight - 210
-  },
-
-  async mounted() {
-    const obj = {}
-
-    for (const key in this.filters) {
-      this.$watch(['filters', key].join('.'), (newVal, oldVal) => {
-        if (newVal === null) newVal = ''
-
-        if (key === 'searchMarketTH') obj[key] = [...new Set(newVal)]
-        else obj[key] = newVal
-
-        localStorage.setItem('filtersMarket', JSON.stringify(obj))
-      })
     }
 
-    if (localStorage.filtersMarket) {
-      var ls = JSON.parse(localStorage.filtersMarket)
-      if (ls) {
-        Object.keys(this.filters).forEach(key => {
-          Object.entries(ls).forEach((item) => {
-            if (JSON.parse(localStorage.getItem('filtersMarket'))[item[0]] && JSON.parse(localStorage.getItem('filtersMarket'))[item[0]] !== 'null' && item[0] === key) {
-              this.filters[item[0]] = JSON.parse(localStorage.getItem('filtersMarket'))[item[0]]
-            }
-          })
-        })
+    /**
+     * Форматируем данные в таблице
+     */
+
+    function formatterData(row, column, cellValue) {
+      if (column.property === 'marketDATE') {
+        return cellValue
+          ? new Date(cellValue).toLocaleDateString('ru')
+          : null
       }
+
+      if (column.property === 'marketPRICE') {
+        return cellValue
+          ? cellValue + ' ' + row.CUR
+          : null
+      }
+
+      if (column.property === 'marketSITE') {
+        return (cellValue > 0
+          ? '*'
+          : null)
+      }
+
+      if (column.property === 'marketIMAddress') {
+        return cellValue === '0 0 0'
+          ? ''
+          : cellValue?.split(" ").join(" * ")
+      }
+
+      return cellValue
     }
 
-    this.TechProperties = await createTechProps()
+    /**
+     * устанавливаем кастомную сортировку для таблицы
+     */
+    function customSort({ prop, order }) {
+      if (!order) return
+      state.filteredTableData = state.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
+    }
 
-    window.addEventListener('resize', this.getWindowHeight)
-  },
+    /**
+     * устанавливаем себестоимость, клиентскую, партнёрскую и оптовую цены для маркета
+     */
+    function applyCalculatedPrices(data) {
+      state.stockPrice = calcStockPrice(data).toLocaleString('ru', { style: 'currency', currency: 'RUB' })
+      state.clientPrice = calcClientPrice(data).toLocaleString('ru', { style: 'currency', currency: 'RUB' })
+      state.partnerPrice = calcPartnerPrice(data).toLocaleString('ru', { style: 'currency', currency: 'RUB' })
+      state.optPrice = calcOptPrice(data).toLocaleString('ru', { style: 'currency', currency: 'RUB' })
+    }
 
-  async created() {
-    console.time('Компонент создавался: ')
-
-    await this.$store.dispatch('getCurrency')
-    await this.$store.dispatch('getRatefromCB')
-
-    await this.$store.dispatch('market_new/get')
-
-    if (!this.Zip.length) await this.$store.dispatch('fetchZip')
-    if (!this.Models.length) await this.$store.dispatch('models/models')
-    if (!this.ProductsType.length) await this.$store.dispatch('fetchProductsType')
-    if (!this.suppliers.length) await this.$store.dispatch('fetchSuppliers')
-    if (!this.conditions.length) await this.$store.dispatch('fetchConditions')
-    if (!this.Basket.length) await this.$store.dispatch('getBasket')
-    if (!this.Orders.length) await this.$store.dispatch('getOrders')
-    if (!this.MarketImg.length) await this.$store.dispatch('getMarketImg')
-    await this.$store.dispatch('models/types')
-    await this.$store.dispatch('fetchParts')
-
-    if (this.ZipList.length === 0) await this.getData()
-
-    this.AllTypes = [...this.ModelsType.map(i => ({ ...i, element: 2 })), ...this.ProductsType.map(i => ({ ...i, element: 1 }))]
-    await this.init()
-
-    /* =========================== чтение конфига =============================== */
-
-    await GetConfig.getColumn('marketColumn')
-      .then((data) => {
-        if (data) {
-          this.headers.forEach(header => {
-            if (header.visible === false) return
-            for (var key in data) {
-              if (key === header.value) {
-                header.selected = data[key]
-              }
-            }
-          })
-          console.log('Данные о сохранеённых колонках успешно загружены: ')
-        }
-      })
-      .catch(error => {
-        this.showForFilter = true
-        this.infoText = error.message
-      })
-
-    await GetConfig.getMyFilters(this.$route.query.userID, this.$route.query.filterName, this.$route.query.payload)
-      .then((filters) => {
-        if (filters === undefined) return false
-        if (filters['Маркет'] !== undefined) {
-          Object.entries(filters['Маркет']).forEach(filter => {
-            this.Filters.push({ name: filter[0], payload: filter[1] })
-            if (this.$route.query.market === filter[0]) {
-              return this.loadFilter(filter[0])
-            }
-          })
-        }
-        if (this.$route.query.userID && this.$route.query.filterName && this.$route.query.payload) {
-          const existence = Object.keys(filters).filter((key, value) => key === this.$route.query.userID)
-          this.showForFilter = true
-          this.infoText = 'Ждите, идёт загрузка фильтра'
-          let arr = []
-          if (existence.length > 0) {
-            arr = filters[existence]
-          } else {
-            arr = filters
-          }
-          arr.forEach(el => {
-            if (typeof el === 'object') {
-              this.filters = Object.assign(this.filters, el.Data)
-            }
-          })
-          this.activeFilterName = `пользователь: " ` + this.$route.query.userID + ` ", название: " ` + this.$route.query.filterName + ` "`
-          setTimeout(() => {
-            this.showForFilter = false
-          }, 2000)
-        }
-      })
-      .catch(error => {
-        console.log(error)
-      })
-
-    console.timeEnd('Компонент создавался: ')
-  },
-
-  // -------------------------- МЕТОДЫ -------------------------- //
-
-  methods: {
-
-    fillColumnPhoto() {
-      console.time('getImages')
-
-      if (this.filters.searchMarketPhoto) {
-        this.MarketImg.map(img => +img.id).sort().forEach(el => {
-          const obj = this.ZipList.find(zip => zip.marketid === el)
-          if (obj) obj.marketPHOTO = true
-        })
+    /**
+     * Диалог добавление новой позиции + бизнес логика
+     */
+    async function addItem() {
+      state.loading = false
+      state.dialog = true
+      state.action = 'add'
+      state.editedItem = {
+        marketPRICE: 0,
+        K1: 1,
+        K2: 2.44,
+        elementTYPE: {id: 1, name: 'ЗИП' },
+        CUR: { id: 1, sign: '₽', name: 'руб.', rate: 1 }
       }
+      hideSomeDialogItems(state.dialogItems, ['ZIP', 'MODEL'])
+      showSomeDialogItems(state.dialogItems, ['Parts'])
+    }
 
-      console.timeEnd('getImages')
-    },
+    /**
+     * Диалог редактирования новой позиции + бизнес логика
+     */
+    async function editItem(item) {
 
-    async getModelMarketList(modelID) {
-      await Api()
-        .post('market/get_parts', [modelID])
+      state.dialog = true;
+      state.action = 'update';
+      hideSomeDialogItems(state.dialogItems, ['Parts']);
+      const addNamePropForZip = namePlusArt(Zip.value.find(i => i.zipID === item.marketID));
+      const addNamePropForModel = namePlusModel(Models.value.find(i => i.ID === item.marketID));
+
+      state.prevItem = {
+        ...item,
+        elementTYPE: elementTypes.find(i => i.id === item.elementTYPE),
+        marketPACK: item.marketPack,
+        ZIP: { ...Zip.value.find(i => i.zipID === item.marketID), name: addNamePropForZip },
+        MODEL: { ...Models.value.find(i => i.ID === item.marketID), name: addNamePropForModel },
+        user: user.value.email,
+        displayName: getUserName(user.value.email),
+        }
+
+        state.editedItem = {
+          ...item,
+          elementTYPE: elementTypes.find(i => i.id === item.elementTYPE),
+          marketSUPPLIER: Suppliers.value.find(i => i.name === item.marketSUPPLIER),
+          marketCOND: Conditions.value.find(i => i.name_ru === item.marketCOND),
+          marketPACK: item.marketPack,
+          CUR: Currency.value.find(i => i.sign === item.CUR) || ({ id: 1, sign: '₽', name: 'руб.', rate: 1 }),
+          ZIP: { ...Zip.value.find(i => i.zipID === item.marketID), name: addNamePropForZip },
+          MODEL: { ...Models.value.find(i => i.ID === item.marketID), name: addNamePropForModel },
+          marketSITE: !!item.marketSITE,
+          user: user.value.email,
+          displayName: getUserName(item.EMAIL),
+        }
+
+
+      applyCalculatedPrices(state.editedItem)
+    }
+
+    /**
+     * Отслеживание и update цен с учётом редактирования формы
+     */
+    function updatePrices(form) {
+      state.editedItem.marketPRICE = +form.marketPRICE
+      state.editedItem.K1 = +form.K1
+      state.editedItem.K2 = +form.K2
+      state.editedItem.CUR = form.CUR
+    }
+
+    /**
+     * Наблюдатель за формой
+     */
+    function watchForm(form) {
+      showElementTypeDialogItems(state.dialogItems, form['elementTYPE'])
+      updatePrices(form)
+
+      
+      if (form.marketPRICE && form.CUR && (form.K1 || form.K2)) applyCalculatedPrices(state.editedItem)
+      if (form.MODEL?.ID) getPartsForModel(form.MODEL.ID)
+    }
+
+    function getPaginationData() {
+      state.paginatedTableData = state.filteredTableData.filter((item, index) => index < state.listQuery.limit * state.listQuery.page && index >= state.listQuery.limit * (state.listQuery.page - 1))
+      state.total = state.filteredTableData.length
+    }
+
+
+
+    function updateData() {
+
+      Vue.prototype.$worker
+        .run(filterHandler , [JSON.stringify(state.filters), JSON.stringify(state.tableData), JSON.stringify(state.formatters)])
         .then(res => {
-          res.data.success === false ? this.ModelMarketList = this.ZipList : this.ModelMarketList = res.data
+          state.filteredTableData = (res || state.tableData)
+          localStorage.setItem(state.reference, JSON.stringify(state.filters))
         })
-        .catch(error => {
-          if (error) throw error
-        })
-    },
+        .catch(console.error)
 
-    async getFutureMarketId() {
-      await Api()
-        .get('zip_prices/get_future_market_id')
-        .then(res => {
-          const count = String(res.data.lastItemId[0].ID + 1).length
-          const countZero = 7 - count
-          let Preffix = 'П'
-          for (let i = 1; i <= countZero; i++) {
-            Preffix += '0'
-          }
-          this.editedItem.marketART = Preffix + (res.data.lastItemId[0].ID + 1)
-        })
-    },
+    }
 
-    changeWidth() {
-      this.maxWidth === '' ? this.maxWidth = '100px' : this.maxWidth = ''
-      localStorage.setItem('sizeColName', this.maxWidth)
-    },
 
-    async getExel() {
-      const filtered = this.headers.filter(header => header.selected === true)
-      filtered.forEach(item => {
-        this.json_fields[item.text] = item.value
-        if (item.text === 'Стоковая') {
-          this.json_fields['Валюта'] = 'CUR'
-        }
+
+    function updateFilters(val) {
+      if (val) state.filters = { ...val }
+    }
+
+
+
+    function resetFilters() {
+      state.filters = {}
+      state.filteredTableData = state.tableData
+    }
+
+
+
+    function editTechProps(item) {
+      state.dialogTechProps = true
+      state.editedItem = { ...item }
+    }
+
+
+
+    function setPhotoToElement(tableRow) {
+        const image = MarketImg.value.find(item => +item.id === tableRow.marketid);
+        return image?.url || null
+    }
+
+
+
+    async function getPartsForModel(modelID) {
+      const res = await getMarketParts({ id: modelID })
+      const Parts = state.dialogItems.find(i => i.value === 'Parts')
+      // eslint-disable-next-line no-undef
+      nextTick(() => {
+        Parts.options = res.length
+          ? res.map(i => ({ ...i, name: idNameTypeArtPNModels(i) }))
+          : state.tableData.map(i => ({ ...i, name: idNameTypeArtPNModels(i) }))
       })
-      return this.$refs.marketTable.$children[0].filteredItems
-    },
+    }
 
-    transformElementType(number) {
-      if (number === 1) return 'ЗИП'
-      if (number === 2) return 'Модель'
-      if (!number) return 'Не определён'
-    },
 
-    loadPhoto(item) {
-      const img = this.MarketImg.find(img => +img.id === +item.marketid)
-      return img ? img.url : false
-    },
 
-    zoom(e, url) {
-      e.preventDefault()
-      this.openImg()
-      this.selectedImage = url
-      this.MarketImg.forEach(photo => {
-        if (photo.url === url) {
-          this.imageWidth = parseInt(photo.width)
-        }
-      })
-    },
+    function setType(val) {
+      if (val) state.filters.searchMarketType = val.name
+    }
 
-    openImg() {
-      this.dialogImg = true
-      this.localLoading = true
-    },
-    closeImg() {
-      this.dialogImg = false
-      this.localLoading = false
-      this.selectedImage = null
-    },
 
-    getWindowHeight(event) {
-      this.WindowHeight = event.target.innerHeight - 210
-    },
 
-    getParts() {
-      this.Parts = this.$store.getters.Parts
-    },
+    function setTpFilter(val) {
+      state.filters.searchMarketTH = val
+    }
 
-    checkART(article) {
-      if (this.ART_1C === article) {
-        return true
-      }
-      if (article && article.length === 8) {
-        if (this.ZipList.find(z => z.ART === article)) {
-          return false
-        } else {
-          return true
-        }
-      } else {
-        return true
-      }
-    },
 
-    // ============================= Фильтры ============================= //
 
-    async createFilter(name) {
-      this.showFilterName = false
-      const marketColumn = {}
-      const id = 'Маркет'
-      await this.headers.forEach(header => {
-        header.selected === null ? marketColumn[header.value] = false : marketColumn[header.value] = header.selected
-      })
-      await this.$store.dispatch('createFilter', [name, id, { Data: this.filters, Columns: marketColumn }])
-        .then(() => {
-          this.Filters.push({ name: name, payload: { Data: this.filters, Columns: marketColumn }})
-          this.$store.dispatch('setData', 'Фильтр успешно создан.')
-        })
-    },
-
-    loadFilter(name) {
-      this.Filters.forEach(filter => {
-        if (filter.name.toString() === name) {
-          for (const item in this.filters) {
-            if (Array.isArray(this.filters[item])) this.filters[item].push(filter.payload.Data[item])
-            else this.filters[item] = filter.payload.Data[item]
-          }
-
-          this.headers.forEach(header => {
-            for (var key in filter.payload.Columns) {
-              if (key === header.value) {
-                header.selected = filter.payload.Columns[key]
-              }
-            }
-          })
-
-          this.activeFilterName = '" ' + name + ' "'
-        }
-        this.menu_filter = false
-        this.showForFilter = true
-        this.$router.replace({
-          ...this.$router.currentRoute,
-          query: {}
-        })
-        this.infoText = 'Ждите, идёт загрузка фильтра'
-
-        setTimeout(() => {
-          this.showForFilter = false
-        }, 2000)
-      })
-    },
-
-    resetFilter() {
-      for (const key in this.filters) {
-        if (key === 'searchMarketTH') {
-          this.filters[key] = []
-          continue
-        }
-        this.filters[key] = ''
-      }
-      this.activeFilterName = ''
-      this.menu_filter = false
-      this.$router.replace({ ...this.$router.currentRoute, query: {}})
-    },
-
-    setParentFilters(val) {
-      this.Filters = [...val]
-    },
-
-    setType(val) {
-      if (val) this.filters.searchMarketType = val.name
-    },
-
-    setTpFilter(val) {
-      this.filters.searchMarketTH = val
-    },
-
-    resetTpFilter() {
-      this.filters.searchMarketTH = []
-      this.filters.searchMarketType = ''
-    },
+    function resetTpFilter() {
+      state.filters.searchMarketTH = []
+      state.filters.searchMarketType = ''
+    }
 
     // ================================================================ //
 
-    gotoMainZip(id) {
-      this.$router.replace('/zip/#' + id)
-    },
-
-    gotoMainModels(id) {
-      this.$router.replace('/models/#' + id)
-    },
-
-    namePlusArt(item) {
-      return item.ids
+    function namePlusArt(item) {
+      return item?.ids
         ? '(' + item.zipID + ') ' + item.zipNAME + ' — ' + item.zipART
-        : item.zipID
+        : item?.zipID
           ? '(' + item.zipID + ') ' + item.zipNAME + ' — (X) Нет в маркете'
           : null
-    },
-    namePlusModel(item) {
-      return item.ID && item.TYPE && item.MODEL && item.VENDOR
-        ? '(' + item.ID + ') ' + item.TYPE + ' — ' + item.MODEL + ' (' + item.VENDOR + ')'
+    }
+    function namePlusModel(item) {
+      return item?.ID && item?.TYPE && item?.MODEL && item?.VENDOR
+        ? '(' + item?.ID + ') ' + item?.TYPE + ' — ' + item?.MODEL + ' (' + item?.VENDOR + ')'
         : null
-    },
-    idNameTypeArtPNModels(item) {
-      return item.marketid && item.marketART && item.marketCOND && item.marketSUPPLIER && item.marketNAME && item.marketPN && item.marketMODELS
-        ? '(' + item.marketid + ') ' + '[' + item.marketART + ', ' + item.marketCOND + ', ' + item.marketSUPPLIER + '] ' + item.marketNAME + ' (' + item.marketPN + ') - ' + item.marketMODELS
-        : null
-    },
-    ratingColor(rating) {
-      let color = ''
-      switch (rating) {
-        case 1: {
-          color = 'red'; break
-        }
-        case 2: {
-          color = 'orange'; break
-        }
-        case 3: {
-          color = 'yellow'; break
-        }
-        case 4: {
-          color = 'lime'; break
-        }
-        case 5: {
-          color = 'green'; break
-        }
-        default: color = 'grey lighten-1'
-      }
-      return color
-    },
-    replaceComma(item) {
-      if (item && item.includes(',')) {
-        return item.replace(/,/g, '<br />')
-      } else return item
-    },
+    }
+    function idNameTypeArtPNModels(item) {
+      return '(' + item?.marketid + ') ' + '[' + item?.marketART + ', ' + item?.marketCOND + ', ' + item?.marketSUPPLIER + '] ' + item?.marketNAME + ' (' + item?.marketPN + ') - ' + item?.marketMODELS
+    }
 
-    close() {
-      this.editedItem = { ...this.defaultItem }
-      this.editedItem.ZipAfterSave = {}
-      this.Parts = []
-      this.editedIndex = -1
+    function closeDialog() {
+      state.dialog = false
+    }
 
-      this.dialog = false
-    },
 
     /*  =====================================  ЗАКАЗЫ  ======================================   */
 
-    handleCommandOrders(command) {
-      if (command === 'showBasket') this.showBasket = true
-      if (command === 'showOrders') this.showOrders = true
-    },
+    /* function handleCommandOrders(command) {
+      if (command === 'showBasket') state.showBasket = true
+      if (command === 'showOrders') state.showOrders = true
+    } */
 
-    updateFromBasket(val) {
-      this.isUpdateFromBasket = val
-    },
 
-    async itemToBasket(item) {
+    function updateFromBasket(val) {
+      state.isUpdateFromBasket = val
+    }
+
+
+    async function openBasketDialog(item) {
       if (item.marketPRICE && item.marketPRICE !== 0) {
-        if (await this.$refs.confirm_with_count.open('Кол-во товара:', 'Добавить?', item.marketid, { color: 'orange' })) {
-          this.$store.commit('setData', 'Позиция добавлена в корзину.')
+        if (await confirm_with_count.value.open('Кол-во товара:', 'Добавить?', item.marketid, { color: 'orange' })) {
+          store.commit('setData', 'Позиция добавлена в корзину.')
         } else {
-          this.$store.commit('setInfo', 'Добавление отменено.')
+          store.commit('setInfo', 'Добавление отменено.')
         }
       } else {
-        this.$store.commit('setInfo', 'Товар не имеет цены! Добавление не может быть продолжено.')
+        store.commit('setInfo', 'Товар не имеет цены! Добавление не может быть продолжено.')
       }
-    },
-    addItemToBasket(data) {
+    }
+
+
+
+
+    function addItemToBasket(data) {
       const marketBasket = JSON.parse(localStorage.getItem('marketBasket'))
+
       if (marketBasket) {
         const isInBasket = marketBasket.CurrentOrder.find(i => i.marketid === data.marketid)
         if (isInBasket) isInBasket.Count = Number(isInBasket.Count) + Number(data.Count)
         else marketBasket.CurrentOrder.push(data)
         localStorage.setItem('marketBasket', JSON.stringify({ CurrentOrder: marketBasket.CurrentOrder }))
-        this.$store.dispatch('setBasket', { CurrentOrder: marketBasket.CurrentOrder })
+        store.dispatch('setBasket', { CurrentOrder: marketBasket.CurrentOrder })
       } else {
-        this.CurrentOrder.push(data)
-        localStorage.setItem('marketBasket', JSON.stringify({ CurrentOrder: this.CurrentOrder }))
-        this.$store.dispatch('setBasket', { CurrentOrder: this.CurrentOrder })
+        state.CurrentOrder.push(data)
+        localStorage.setItem('marketBasket', JSON.stringify({ CurrentOrder: state.CurrentOrder }))
+        store.dispatch('setBasket', { CurrentOrder: state.CurrentOrder })
       }
-    },
-
-    // =================================== Получение данных ===================================== //
-
-    getData() {
-      console.time('Loading Data')
-
-      this.ZipList = [...this.market] // this.ZipList = this.market.map(item => transformPriceWithRate(item))
-
-      this.ZipList.forEach(item => {
-        if (item.marketSUPPLIER) this.multiSelects.marketSupp.push(item.marketSUPPLIER)
-        if (item.marketCOND) this.multiSelects.marketCond.push(item.marketCOND)
-
-        const tp = this.TechProperties.find(i => i.zip === item.marketid)
-        tp
-          ? item['marketTH'] = tp.ids
-          : item['marketTH'] = []
-      })
-
-      this.lastItemId = this.ZipList[this.ZipList.length - 1].id
-
-      console.timeEnd('Loading Data')
-    },
-
-    editTechProps(item) {
-      this.dialogTechProps = true
-      this.editedItem = { ...item }
-    },
-
-    // ================================  УДАЛЕНИЕ ПОЗИЦИИ ==================================== //
-
-    deleteItem(item) {
-      this.loading = true
-      const index = this.ZipList.indexOf(item)
-
-      setTimeout(() => {
-        checkInRemonts({ id: item.marketid })
-          .then(res => {
-            let question = ''
-
-            res.zID !== null
-              ? question = confirm('Данная позиция выбрана в незакрытых ремонтах. Открыть отдельное окно Jira для их редактирования? Количество запросов - ' + res.Qty + ' шт.')
-              : question = confirm('Вы уверены, что хотите удалить эту позицию в Маркете?')
-
-            if (!res.zID) {
-              if (question) {
-                remove({ id: item.marketid, email: this.$store.getters.currentUser.email, username: getUserName(this.$store.getters.currentUser.email) })
-                  .then(() => {
-                    this.ZipList.splice(index, 1)
-                    this.loading = false
-                    this.$store.commit('setData', `Позиция с id ${item.marketid} успешно удалена.`)
-                  })
-                  .catch(error => this.$store.commit('setError', error.message))
-              } else this.loading = false
-            } else {
-              if (question) window.open('http://support.atlas-pro24.local/issues/?jql=id in (' + res.zID + ')')
-            }
-          })
-          .catch(error => {
-            this.$store.commit('setError', error.message)
-          })
-      }, 500)
-    },
-
-    /* ========================================= Редактирование позиции ======================================== */
-
-    editItem(item) {
-      this.editedItem = { ...item }
-      this.editedIndex = this.ZipList.indexOf(item)
-
-      if (typeof item.marketPRICE === 'number') item.marketPRICE = JSON.stringify(item.marketPRICE)
-
-      this.marketTitle = this.editedItem.marketNAME
-      this.ART_1C = item.marketART
-
-      if (this.editedItem.ZipAfterSave === undefined || _.isEmpty(this.editedItem.ZipAfterSave)) this.editedItem.ZIP = this.Zip.find(z => z.zipID === item.marketID)
-      else this.editedItem.ZIP = Object.assign({}, this.editedItem.ZipAfterSave)
-      this.editedItem.MODELS = this.Models.find(model => (model.ID === item.marketID) && (item.elementTYPE === 2 || item.elementTYPE === 'МОДЕЛЬ'))
-
-      this.dialog = true
-    },
-
-    /* ========================================== СОХРАНЕНИЕ ================================================= */
-
-    save() {
-      let elementTYPE = null
-      let elementID = null
-
-      const email = this.$store.getters.currentUser.email
-      const objCond = this.$store.getters.conditions.find(c => c.name_ru === this.editedItem.marketCOND)
-      const objSupp = this.$store.getters.suppliers.find(c => c.name === this.editedItem.marketSUPPLIER)
-      const objCur = this.$store.getters.currency.find(c => c.sign === this.editedItem.CUR)
-
-      if ((this.editedItem.elementTYPE === 1 || this.editedItem.elementTYPE === 'ЗИП') && !(_.isEmpty(this.editedItem.ZIP))) {
-        elementTYPE = 1
-        elementID = this.editedItem.ZIP.zipID
-      }
-
-      if ((this.editedItem.elementTYPE === 2 || this.editedItem.elementTYPE === 'МОДЕЛЬ') && !(_.isEmpty(this.editedItem.MODELS))) {
-        elementTYPE = 2
-        elementID = this.editedItem.MODELS.ID
-      }
-
-      const data = {
-
-        id: this.editedItem.marketid,
-        price: parseFloat(this.editedItem.marketPRICE),
-        k1: parseFloat(this.editedItem.K1),
-        k2: parseFloat(this.editedItem.K2),
-        currency: +objCur.id,
-        pn: this.editedItem.marketPN,
-        articul: this.editedItem.marketART,
-        condition: +objCond.id,
-        supplier: +objSupp.id,
-        site: this.editedItem.marketSITE ? 1 : 0,
-        pack: this.editedItem.marketPack ? +this.editedItem.marketPack : null,
-        desc: this.editedItem.marketDESC,
-        elementTYPE,
-        elementID,
-        email,
-        username: getUserName(email)
-
-      }
-
-      if (this.editedIndex > -1) {
-        const objValid = () => {
-          if (this.editedItem.elementTYPE === 1) return this.$refs.objZIP.validate()
-          if (this.editedItem.elementTYPE === 2) return this.$refs.objMODELS.validate()
-        }
-
-        if (this.$refs.price.validate() && this.$refs.ratio.validate() && this.$refs.cur.validate() && objValid()) {
-          update(data)
-            .then(async response => {
-              if (response.affectedRows > 0) {
-                this.ZipList = []
-                await this.$store.dispatch('market_new/get')
-                await this.getData()
-
-                this.$store.dispatch('setData', `Позиция с id ${this.editedItem.marketid} успешно обновлена.`)
-
-                this.close()
-              }
-            })
-            .catch(error => {
-              this.$store.commit('setError', error.message)
-            })
-        }
-      } else {
-        if (this.$refs.price.validate() && this.$refs.ratio.validate() && this.$refs.cur.validate() && this.$refs.element.validate() && this.$refs.supp.validate() && this.$refs.cond.validate()) {
-          const part_ids = this.Parts.map(item => item.marketid)
-
-          add(this.Parts.length ? [data, part_ids] : [data])
-            .then(async response => {
-              if (response.affectedRows > 0) {
-                this.ZipList = []
-                await this.$store.dispatch('market_new/get')
-                await this.getData()
-
-                this.$store.dispatch('setData', `Позиция с id ${response.insertId} успешно добавлена.`)
-
-                this.close()
-              }
-            })
-            .catch(error => {
-              this.$store.commit('setError', error.message)
-            })
-        } else {
-          this.$store.dispatch('setError', 'Заполните соответствующие поля!')
-          this.localLoading = false
-        }
-      }
-    },
-
-    async init() {
-      if (window.location.hash) {
-        const id = window.location.hash.replace(/[^0-9]/gim, '')
-        this.filters.searchMarketZipID = id
-      }
-      this.maxWidth = localStorage.getItem('sizeColName')
     }
-  }
 
-}
+
+
+    /* ========================================== Добавление позиции Маркета ================================================= */
+
+    function addMarket(form) {
+      state.loading = true;
+      const new_data = { ...form, email: user.value.email, displayName: getUserName(user.value.email) }
+
+      add(new_data)
+        .then(async res => {
+          if (!res.insertId) return Notification({ type: 'error', message: 'Произошла ошибка в процессе добавления Маркета.' });
+
+          const new_data = await store.dispatch('market_new/get');
+          state.tableData = [ ...new_data ];
+
+          Notification({ type: 'success', message: 'Информация успешно добавлена.', duration: 10000 });
+          closeDialog();
+        })
+        .catch(err => {
+          console.log(err)
+          Notification({ type: 'error', message: err })
+        })
+        .finally(() => (state.loading = false))
+    }
+
+    /* =========================== Редактирование позиции Маркета =========================== */
+    function updateMarket(form) {
+      const new_data = { ...form, email: user.value.email, displayName: getUserName(user.value.email) }
+      state.loading = true
+
+      update({ new_data, prev_data: state.prevItem })
+        .then(async() => {
+          const new_data = await store.dispatch('market_new/get');
+          state.tableData = [ ...new_data ];
+          state.tableData.length += 1;
+
+          closeDialog();
+          Notification({ type: 'success', message: 'Информация успешно обновлена.', duration: 10000 })
+        })
+        .catch(err => {
+          console.log(err)
+          Notification({ type: 'error', message: err })
+        })
+        .finally(() => (state.loading = false))
+    }
+
+    // ============================  Удаление позиции Маркета ============================== //
+
+    async function removeMarket(item) {
+      // 
+      const { marketid } = item;
+      let isConfirm;
+      const res = await checkInRemonts({ id: marketid });
+      const { zID, Qty } = res[0];
+
+      isConfirm = (zID !== null)
+        ? await MessageBox.confirm('Данная позиция выбрана в незакрытых ремонтах. Открыть отдельное окно Jira для их редактирования? Количество запросов - ' + Qty + ' шт.').catch(err => (isConfirm = err))
+        : await MessageBox.confirm('Вы уверены, что хотите удалить эту позицию в Маркете?','Внимание!', { type: 'warning'}).catch(err => (isConfirm = err))
+        
+      if (isConfirm === "cancel") return;
+
+      if (zID && isConfirm === 'confirm')
+        return window.open('http://support.atlas-pro24.local/issues/?jql=id in (' + zID + ')');
+
+      state.loadingForRemove = true;
+
+      remove({
+        id: marketid,
+        DISPLAY_NAME: getUserName(user.value.email)
+      })
+        .then(async () => {
+          const new_data = await store.dispatch('market_new/get');
+          state.tableData = [ ...new_data ];
+          Notification({ type: 'success', message: 'Позиция успешно удалена.', duration: 10000 });
+        })
+        .catch(err => {
+          console.log(err)
+          Notification({ type: 'error', message: err })
+        })
+        .finally(() => (state.loadingForRemove = false))
+    }
+
 </script>
 
 <style scoped>

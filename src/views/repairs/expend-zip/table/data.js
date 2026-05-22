@@ -8,10 +8,11 @@ export {
   exportFileName,
   templateHeaders,
   firms,
-  periods
+  periods,
+  reference
 }
 
-// const reference = 'expendedZipTable'
+const reference = 'expendedZipTable'
 const tableName = 'ЗИП за год'
 const exportFileName = 'expended_zip_list.xls'
 
@@ -21,11 +22,15 @@ const firms = [
     name: 'Атлас Про',
     reference: 'expendedZipTableAtlas'
   },
+
+
   /* {
     id: 429,
     name: 'ТСД Сервис',
     reference: 'expendedZipTableTSD'
   } */
+
+
 ]
 
 const periods = [
@@ -53,19 +58,18 @@ const templateHeaders = [
   { text: 'PN', value: 'PNs', sortable: 'custom' },
   { text: 'Модели', value: 'Models', sortable: 'custom' },
   { text: 'Клиенты', value: 'Clients', sortable: 'custom', },
-  { text: 'Кол-во', value: 'Q', sortable: 'custom' },
+  { text: 'Инженеры', value: 'eng', sortable: 'custom', },
+  { text: 'Кол-во JIRA', value: 'Q', sortable: 'custom' },
+  { text: 'Кол-во 1C', value: 'qtiIn', sortable: 'custom' },
   { text: 'Цена за шт.', value: 'Price', sortable: 'custom' },
   { text: 'Расход в месяц', value: 'QtyM', sortable: 'custom' },
   { text: 'Неснижаемый остаток', value: 'Qmin', sortable: 'custom' },
   { text: 'Необходимо заказать', value: 'toOrder', sortable: 'custom' },
   { text: 'Необходимо заказать всего', value: 'commonToOrder', sortable: 'custom', width: 150 },
   { text: '% остатка', value: 'percent', sortable: 'custom', formatter: Coloration },
-  { text: 'Кол-во по Атлас', value: 'QtyA', sortable: 'custom' },
-  { text: 'Мин. себ. Атлас', value: 'MinSebA', sortable: 'custom' },
-  { text: 'Макс. себ. Атлас', value: 'MaxSebA', sortable: 'custom' },
-  { text: 'Кол-во по ТСД', value: 'QtyT', sortable: 'custom' },
-  { text: 'Мин. себ. ТСД', value: 'MinSebT', sortable: 'custom' },
-  { text: 'Макс. себ. ТСД', value: 'MaxSebT', sortable: 'custom' },
+  { text: 'Количество', value: 'QtyA', sortable: 'custom' },
+  { text: 'Мин. себес.', value: 'MinSebA', sortable: 'custom' },
+  { text: 'Макс. себес.', value: 'MaxSebA', sortable: 'custom' },
   { text: 'Кол-во в закупках', value: 'QtyZ', sortable: 'custom' },
   { text: 'Закупки', value: 'Zakupki', sortable: 'custom', formatter: JiraLink },
   { text: 'Ожидание ремонта', value: 'currentNeed', sortable: 'custom', width: 150, formatter: RemontsJiraLink },

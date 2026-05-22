@@ -132,8 +132,8 @@
           :filters="filters"
           :types="{
             Input: ['isummary', 'pp', 'pplp', 'ikey',],
-            MultiSelect: ['firma', 'ci'],
-            Select: ['currency', 'istatus', 'forma', 'subdivision'],
+            MultiSelect: ['firma', 'istatus'],
+            Select: ['currency', 'forma', 'subdivision', 'ci'],
             CheckBox: ['sum', 'stroki', 'total', 'bills'],
             Date: ['created', 'date_plan', 'date_crit', 'expense_period'],
             Clear: ['actions']
@@ -260,7 +260,7 @@ export default {
       },
   
       email() {
-        return this.$store.state.user.currentUser.email
+        return this.$store.getters["auth/currentUser"]?.email
       },
   
     },

@@ -263,7 +263,7 @@ export default {
       return this.$store.state.finance.Cash
     },
     currentUser() {
-      return this.$store.getters.jira_users.find(item => item.email === this.$store.getters.currentUser.email)
+      return this.$store.getters.jira_users.find(item => item.email === this.$store.getters["auth/currentUser"]?.email)
     },
     previousYear01() {
       return (new Date().getFullYear() - 1) + '-01'

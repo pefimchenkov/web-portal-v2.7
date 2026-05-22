@@ -11,6 +11,7 @@
       :adresses_sale="editedItem.adresses_sale"
       :adresses_service="editedItem.adresses_service"
       :adresses_repair="editedItem.adresses_repair"
+      :adresses_debt="editedItem.adresses_debt"
       :is-deleted="editedItem.isDeleted"
       @close="dialog = false"
       @update="update"
@@ -193,9 +194,10 @@ export default {
         ...item,
         adresses_sale: item.adresses.filter(i => i.warehouse === 'a4b55d3a-49e8-11ea-826d-001dd8b72066'),
         adresses_service: item.adresses.filter(i => i.warehouse === 'd494caa5-c02d-11ea-80da-0cc47a1243f5'),
-        adresses_repair: item.adresses.filter(i => i.warehouse === '7b044cba-3d4f-11ea-8265-001dd8b72066')
+        adresses_repair: item.adresses.filter(i => i.warehouse === '7b044cba-3d4f-11ea-8265-001dd8b72066'),
+        adresses_debt: item.adresses.filter(i => i.warehouse === 'f91c1070-d984-11f0-8853-00155dd21b64')
       }
-      console.log(this.editedItem)
+      console.log(item.adresses)
     },
 
     updateFilters(val) {
@@ -204,13 +206,7 @@ export default {
 
     update(data) {
       console.log(data);
-      window.location.reload();
-      /* const Item = this.items.find(item => item.articul === data.articul);
-      Item.artTSD = data?.artTSD
-      Item.codeZip = data?.codeZip
-      Item.partNum = data?.partNum
-      Item.name = data?.ShortName
-      Item.adresses = data?.adresses */
+      //window.location.reload();
     },
 
     setElementID(row) {

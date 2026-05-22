@@ -28,8 +28,10 @@ function filterHandler(filters, data, formatters) {
                 if (typeof search === 'boolean') {
 
                     const data = parsedFormatters.find(i => i?.name === filter)
-                    if (typeof data === 'object' && typeof data?.formatter === 'function') {
-                        return result.push(search ? data.formatter(row[filter]) : true)
+
+                    if (typeof data === 'object' && data?.formatter) {
+                        const userFunc = new Function(`return ${data?.formatter}`)();
+                        return result.push(search ? userFunc(row[filter]) : true)
                     }
 
                     return result.push(search ? row[filter] : true)
@@ -38,7 +40,10 @@ function filterHandler(filters, data, formatters) {
 
                 /* ============ Multi ============== */
 
-                if (Array.isArray(search) && search.every(i => (i && typeof i === 'string'))) {
+                if (Array.isArray(search)
+                        && search.length > 0
+                        && search.every(i => (i && typeof i === 'string'))) {
+
                     const splittedData = !row[filter]
                         ? ['нет данных']
                         : row[filter]?.split(', ')

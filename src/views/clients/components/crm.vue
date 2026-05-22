@@ -159,7 +159,7 @@ export default {
 
 
   computed: {
-    ...mapGetters(['editable', 'readonly', 'jira_users', 'currentUser', 'clients']),
+    ...mapGetters(['editable', 'readonly', 'jira_users', 'auth/currentUser', 'clients']),
     ...mapState({ crmData: (state) => state.jira.CrmData }),
 
     client() {

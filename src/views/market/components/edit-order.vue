@@ -141,7 +141,7 @@ export default {
   computed: {
 
     user() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.email : null
+      return this.$store.getters["auth/currentUser"]?.email || null
     },
 
     totalXs() {

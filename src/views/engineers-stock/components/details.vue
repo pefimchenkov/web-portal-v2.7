@@ -256,14 +256,17 @@ export default {
     ...mapGetters(['EngineersStock', 'EngineersStockArchive', 'EngineersStockDetails']),
 
     user() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.email : null
+      return this.$store.getters['auth/currentUser']?.email || null
     },
+
     displayName() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.displayName : null
+      return this.$store.getters["auth/currentUser"]?.displayName || null
     },
+
     zipName() {
       return this.EngineersStockDetails.length > 0 ? this.EngineersStockDetails[0].ZipName : null
     },
+    
     email() {
       return this.EngineersStockDetails.length > 0 ? this.EngineersStockDetails[0].Email : null
     }

@@ -8,7 +8,7 @@
       :comment="editedItem.comment"
       :price-type="editedItem.price_type"
       :total="editedItem.total"
-      :sale="editedItem.sale_id"
+      :sale="editedItem.jira_id"
       :orders-parts="OrdersParts.filter(i => editedItem.id == i.order_id)"
       :discount="editedItem.sale_xl"
       @closeDialog="dialogEdit = false"
@@ -21,7 +21,7 @@
       :show="dialogEditParts"
       :parts="partsByOrderId(editedItem.id)"
       :price-type="editedItem.price_type"
-      :sale="editedItem.sale_id"
+      :sale="editedItem.jira_id"
       :total="editedItem.total"
       :discount="editedItem.sale_xl"
       @closeDialog="dialogEditParts = false"
@@ -61,6 +61,7 @@
       @closeDialog="dialogCreatePurchase = false"
       @resetId="editedItem.id = null"
       @update="update"
+      @loading="(val) => (loading = val)"
     />
 
 
@@ -118,7 +119,15 @@
                     <el-table-column
                       label="Описание"
                       prop="NAME"
-                    />
+                    >
+                      <template slot-scope="{ row }">
+                          <el-tooltip effect="dark" :content="row.NAME" placement="top">
+                            <span>
+                              {{ formatName(row.NAME) }}
+                            </span>
+                          </el-tooltip>
+                      </template>
+                    </el-table-column>
                     <el-table-column
                       label="PN"
                       prop="PN"
@@ -164,6 +173,14 @@
                       label="Склад Атлас"
                       prop="qtyA"
                     />
+                    <el-table-column
+                      label="JIRA"
+                    >
+                      <template slot-scope="scope">
+                        <el-link type="primary" :href="$options._SETTINGS.jira_url + scope.row.purchase_id" target="_blank">{{ scope.row.purchase_id }}</el-link>
+                      </template>
+                    </el-table-column>
+
                     <template slot="append">
                       <div style="text-align: end;">
                         <download-excel
@@ -177,6 +194,7 @@
                         </download-excel>
                       </div>
                     </template>
+
                   </el-table>
 
                 </template>
@@ -265,10 +283,11 @@
 
               <el-table-column
                 label="JIRA"
-                prop="sale_id"
+                prop="jira_id"
               >
-                <template slot-scope="scope">
-                  <el-link type="primary" :href="$options._SETTINGS.jira_url + scope.row.sale_id" target="_blank">{{ scope.row.sale_id }}</el-link>
+                <template slot-scope="{ row }">
+                  <div v-if="row.type === 'purchase' && isPurchaseLinked(row.id)">См. внутри списка</div>
+                  <el-link v-else type="primary" :href="$options._SETTINGS.jira_url + row.jira_id" target="_blank">{{ row.jira_id }}</el-link>
                 </template>
               </el-table-column>
               
@@ -290,13 +309,13 @@
                       <el-dropdown-item :command="{ action: 'edit', row }">Редактировать заказ</el-dropdown-item>
                       <el-dropdown-item :command="{ action: 'edit_parts', row }">Редактировать состав</el-dropdown-item>
 
-                      <el-dropdown-item v-if="!row.sale_id && row.type === 'sale'" :command="{ action: 'link_sale', row }">Привязать SALE</el-dropdown-item>
-                      <el-dropdown-item v-if="row.sale_id && row.type === 'sale'" :command="{ action: 'unlink_sale', row }">Отвязать SALE</el-dropdown-item>
-                      <el-dropdown-item v-if="!row.sale_id && row.type === 'sale'" :command="{ action: 'create_sale', row }">Создать SALE</el-dropdown-item>
+                      <el-dropdown-item v-if="!row.jira_id && row.type === 'sale'" :command="{ action: 'link_sale', row }">Привязать SALE</el-dropdown-item>
+                      <el-dropdown-item v-if="row.jira_id && row.type === 'sale'" :command="{ action: 'unlink_order', row }">Отвязать SALE</el-dropdown-item>
+                      <el-dropdown-item v-if="!row.jira_id && row.type === 'sale'" :command="{ action: 'create_sale', row }">Создать SALE</el-dropdown-item>
 
-                      <el-dropdown-item v-if="!row.sale_id && row.type === 'purchase'" :command="{ action: 'link_purchase', row }">Привязать ZAKUPKA</el-dropdown-item>
-                      <el-dropdown-item v-if="row.sale_id && row.type === 'purchase'" :command="{ action: 'unlink_purchase', row }">Отвязать ZAKUPKA</el-dropdown-item>
-                      <el-dropdown-item v-if="!row.sale_id && row.type === 'purchase'" :command="{ action: 'create_purchase', row }">Создать ZAKUPKA</el-dropdown-item>
+                      <!-- <el-dropdown-item v-if="!isPurchaseLinked(row.id) && row.type === 'purchase'" :command="{ action: 'link_purchase', row }">Привязать ZAKUPKA</el-dropdown-item> -->
+                      <el-dropdown-item v-if="isPurchaseLinked(row.id) && row.type === 'purchase'" :command="{ action: 'unlink_purchase', row }">Отвязать ZAKUPKA</el-dropdown-item> 
+                      <el-dropdown-item v-if="!isPurchaseLinked(row.id) && row.type === 'purchase'" :command="{ action: 'create_purchase', row }">Создать ZAKUPKA</el-dropdown-item>
 
                       <el-dropdown-item :command="{ action: 'remove', row }">Удалить заказ</el-dropdown-item>
                     </el-dropdown-menu>
@@ -315,9 +334,7 @@
 
 import settings from '@/settings'
 import { mapState, mapGetters } from 'vuex'
-// import _ from 'lodash'
-// import Confirm from '@/components/shared/Confirm'
-import { get, remove, getParts, unlinkSale, unlinkPurchase } from '@/api/market/orders'
+import { get, remove, getParts, unlinkOrder, unlinkPurchase } from '@/api/market/orders'
 import { getUserName } from '@/filters/jira-users.js'
 
 export default {
@@ -369,33 +386,20 @@ export default {
   computed: {
 
     ...mapState({
-      /* Orders: state => state.market.Orders,
-      Basket: state => state.market.Basket, */
       Currency: state => state.currency.Currency
     }),
 
-    ...mapGetters({ Market: 'market_new/market', JiraUsers: 'jira_users', CurrentUser: 'currentUser' }),
+    ...mapGetters({ Market: 'market_new/market', JiraUsers: 'jira_users', CurrentUser: 'auth/currentUser' }),
 
     filteredOrders() {
       return this.Orders.filter(data => {
         return (!this.search ||
         (data.comment.toLowerCase().includes(this.search.toLowerCase()) ||
-        data.reporter.toLowerCase().includes(this.search.toLowerCase()) ||
-        this.xformPriceType(data.price_type).toLowerCase().includes(this.search.toLowerCase())
+          data.reporter.toLowerCase().includes(this.search.toLowerCase()) ||
+          this.xformPriceType(data.price_type).toLowerCase().includes(this.search.toLowerCase())
         ))
       })
     }
-
-    /* filteredAndSorted() {
-      return this.Orders.filter(order => {
-        if (this.search) {
-          if (order.comment) {
-            return order.comment.toLowerCase().includes(this.search.toLowerCase())
-          } else return false
-        } else return true
-      })
-
-    } */
 
   },
 
@@ -435,7 +439,8 @@ export default {
             return item
           }).filter(i => i.reporter === this.CurrentUser.email)
 
-          this.Orders = [...arr]
+          this.Orders = [...arr];
+          console.log(this.Orders)
           this.loading = false;
         })
     },
@@ -583,12 +588,12 @@ export default {
     handleCommand(data) {
       if (data.action === 'edit') this.edit(data.row)
       if (data.action === 'edit_parts') this.editParts(data.row)
-      if (data.action === 'link_sale') this.linkSale(data.row)
-      if (data.action === 'unlink_sale') this.unlinkSale(data.row)
       if (data.action === 'create_sale') this.createSale(data.row)
-      if (data.action === 'link_purchase') this.linkPurchase(data.row)
-      if (data.action === 'unlink_purchase') this.unlinkPurchase(data.row)
       if (data.action === 'create_purchase') this.createPurchase(data.row)
+      if (data.action === 'link_sale') this.linkSale(data.row)
+      if (data.action === 'link_purchase') this.linkPurchase(data.row)
+      if (data.action === 'unlink_order') this.unlinkOrder(data.row)
+      if (data.action === 'unlink_purchase') this.unlinkPurchase(data.row.id, this.OrdersParts)
       if (data.action === 'remove') this.remove(data.row)
     },
 
@@ -611,49 +616,53 @@ export default {
       setTimeout(() => (this.dialogLinkSale = true), 200)
     },
 
-    unlinkSale(val) {
-      this.$confirm('Вы точно хотите продолжить?', 'Внимание', {
-        confirmButtonText: 'Да',
-        cancelButtonText: 'Нет',
-        type: 'warning'
-      }).then(() => {
-        unlinkSale({ id: val.id })
-          .then(async res => {
-            this.$message({ type: 'success', message: res })
-            await this.getOrders()
-          })
-      })
-    },
-
-    createSale(val) {
-      this.editedItem = { ...val }
-      setTimeout(() => (this.dialogCreateSale = true), 200)
-    },
-
     linkPurchase(val) {
       this.editedItem = { ...val }
       setTimeout(() => (this.dialogLinkPurchase = true), 200)
     },
 
-    unlinkPurchase(val) {
+    unlinkOrder(val) {
       this.$confirm('Вы точно хотите продолжить?', 'Внимание', {
         confirmButtonText: 'Да',
         cancelButtonText: 'Нет',
         type: 'warning'
       }).then(() => {
-        unlinkPurchase({ id: val.id })
-          .then(async res => {
-            this.$message({ type: 'success', message: res })
-            await this.getOrders()
+        unlinkOrder({ id: val.id })
+          .then(res => {
+            this.$notify({ type: 'success', message: res })
+            this.update()
           })
       })
     },
 
-    createPurchase(val) {
-      this.editedItem = { ...val }
-      setTimeout(() => (this.dialogCreatePurchase = true), 200)
+    unlinkPurchase(id, orderParts) {
+      this.$confirm('Вы точно хотите продолжить?', 'Внимание', {
+        confirmButtonText: 'Да',
+        cancelButtonText: 'Нет',
+        type: 'warning'
+      }).then(() => {
+        const market_ids = orderParts
+          .filter(parts => parts.order_id === id)
+          .map(i => i.market_id)
+        unlinkPurchase({ order_id: id, market_ids })
+          .then(res => {
+            this.$notify({ type: 'success', message: res })
+            this.update()
+          })
+      })
     },
 
+
+
+    createSale(order) {
+      this.editedItem = { ...order }
+      setTimeout(() => (this.dialogCreateSale = true), 200)
+    },
+
+    createPurchase(order) {
+      this.editedItem = { ...order }
+      setTimeout(() => (this.dialogCreatePurchase = true), 200)
+    },
 
 
     async update() {
@@ -673,10 +682,22 @@ export default {
             setTimeout(() => {
               this.Orders = this.Orders.filter(order => order.id !== val.id)
               this.loading = false
-              this.$message({ type: 'success', message: res })
+              this.$notify({ type: 'success', message: res })
             }, 1000)
           })
       })
+    },
+
+    isPurchaseLinked(order_id) {
+      return this.OrdersParts
+        .filter(parts => parts.order_id === order_id)
+        .every(item => item.purchase_id)
+    },
+
+    formatName(text) {
+      return text.length > 20
+        ? text.slice(0, 20) + '...'
+        : text
     }
 
   }
@@ -684,8 +705,7 @@ export default {
 </script>
 
 <style>
-  .tableRowClassName { background: #f3f4f7 !important; } /* #f3f4f7 */
-  /* .tableRowClassName:hover { color: rgb(51, 49, 49); } */
+  .tableRowClassName { background: #f3f4f7 !important; }
   .has-gutter {
     font-weight: 600 !important;
   }

@@ -66,7 +66,7 @@
 <script>
 
 import AddPhoto from './add-photo'
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 
 export default {
 

@@ -28,7 +28,9 @@
               {{ item.name }}
             </el-option>
           </el-select>
-          <el-skeleton-item
+
+
+          <!-- <el-skeleton-item
             v-if="!clients.length"
             variant="text"
             style="width: 30%; height: 20px; margin: 0 10px"
@@ -46,9 +48,10 @@
             style="min-width: 120px;"
           >
             <el-option v-for="item in filteredClients" :key="item?.ID" :value="item?.NAME" />
-          </el-select>
+          </el-select> -->
 
-          <el-skeleton-item
+
+          <!-- <el-skeleton-item
             v-if="!engineers.length"
             variant="text"
             style="width: 30%; height: 20px; margin: 0 10px"
@@ -69,9 +72,10 @@
               :key="item?.user_name"
               :value="item?.display_name"
             />
-          </el-select>
+          </el-select> -->
 
-          <el-select
+
+          <!-- <el-select
             v-model="filters.type"
             class="mr-2"
             collapse-tags
@@ -80,7 +84,7 @@
             style="min-width: 120px;"
           >
             <el-option v-for="item in types" :key="item.id" :value="item.value" :label="item.name" />
-          </el-select>
+          </el-select> -->
 
           <el-button type="primary" size="mini" class="ml-5" @click="getData(1)">
             Фильтр
@@ -121,26 +125,26 @@ export default {
     return {
       filters: {
         period: null,
-        clients: [],
-        models: [],
-        type: null,
-        engineer: null,
+        //clients: [],
+        //models: [],
+        //type: null,
+        //engineer: null,
       },
       counter: null,
-      types: [
+      /* types: [
         { id: 1, name: 'Ремонты', value: 'rem' },
         { id: 2, name: 'Продажи', value: 'sale' },
-      ]
+      ] */
     };
   },
 
   computed: {
-    filteredEngineers() {
+    /* filteredEngineers() {
       return this.engineers.filter(eng => eng)
     },
     filteredClients() {
       return this.clients.filter(client => client)
-    },
+    }, */
 
   },
 
@@ -148,19 +152,20 @@ export default {
     getData(counter) {
       if (counter === 0) {
         this.filters.period = null;
-        this.filters.clients = [];
+        /* this.filters.clients = [];
         this.filters.engineer = null;
-        this.filters.type = null;
+        this.filters.type = null; */
       }
-      const client_ids = this.filters.clients.map(
+      /* const client_ids = this.filters.clients.map(
         (name) => this.clients.find((i) => i?.NAME === name)?.ID
       );
 
       const engineer = this.engineers.find(
         (user) => user?.display_name === this.filters.engineer
-      )?.user_name;
+      )?.user_name; */
 
-      this.$emit("getData", { clients: client_ids, engineer, type: this.filters.type, period: this.filters.period?.value, period_number: this.filters.period?.id });
+      //this.$emit("getData", { clients: client_ids, engineer, type: this.filters.type, period: this.filters.period?.value, period_number: this.filters.period?.id });
+      this.$emit("getData", { period: this.filters.period?.value, period_number: this.filters.period?.id });
       this.counter = counter;
     },
   },

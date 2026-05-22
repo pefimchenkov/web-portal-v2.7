@@ -25,7 +25,7 @@ export default {
   watch: {
     $route(route) {
       // if you go to the redirect page, do not update the breadcrumbs
-      if (route.path.startsWith('/redirect/')) {
+      if (route.path.startsWith('/redirect')) {
         return
       }
       this.getBreadcrumb()
@@ -45,7 +45,7 @@ export default {
       const first = matched[0]
 
       if (!this.isDashboard(first)) {
-        matched = [{ path: '/dashboard', meta: { title: 'WEB Портал' }}].concat(matched)
+        matched = [{ path: '/', meta: { title: 'WEB Портал' }}].concat(matched)
       }
 
       this.levelList = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)

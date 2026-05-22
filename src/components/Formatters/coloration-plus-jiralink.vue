@@ -1,7 +1,7 @@
 <template>
   <span>
     <span v-if="typeof row[column].color === 'function'" :style="`${row[column].color()}`">
-    <el-tooltip v-if="jql_query" class="item" content="Нажмите для перехода в фильтр JIRA" effect="light" placement="top">
+    <el-tooltip v-if="jql_query" class="item" content="Нажмите для перехода в фильтр JIRA" effect="light" placement="top" :open-delay="500">
       <div
         @click="open(jql + jql_query)"
         class="link"
@@ -15,7 +15,7 @@
       </div>
     </span>
     <span v-else :style="`color: ${row[column].color}`">
-    <el-tooltip v-if="jql_query" class="item" content="Нажмите для перехода в фильтр JIRA" effect="light" placement="top">
+    <el-tooltip v-if="jql_query" class="item" content="Нажмите для перехода в фильтр JIRA" effect="light" placement="top" :open-delay="500">
       <div
         @click="open(jql + jql_query)"
         class="link"

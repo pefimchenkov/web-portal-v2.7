@@ -99,6 +99,7 @@ export default {
       default: false
     }
   },
+
   data: () => ({
     loading: false,
     attachments: [],
@@ -115,13 +116,16 @@ export default {
       v => !!v || 'Обязательное поле!'
     ]
   }),
+
   computed: {
     users() {
       return this.$store.state.jira_users.JIRA_USERS
     },
+
     email() {
-      return this.$store.state.user.currentUser.email
+      return this.$store.getters["auth/currentUser"]?.email
     },
+    
     currentUser() {
       return this.users.find(item => item.email === this.email)
     }

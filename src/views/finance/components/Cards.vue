@@ -193,7 +193,7 @@ export default {
 
   computed: {
     userRole() {
-      return this.$store.getters.userRole
+      return this.$store.getters["auth/currentUser"]?.roles
     },
 
     salary() {
@@ -212,9 +212,7 @@ export default {
     }),
 
     email() {
-      return this.$store.getters.currentUser
-        ? this.$store.getters.currentUser.email
-        : 'имя пользователя отсутствует'
+      return this.$store.getters["auth/currentUser"]?.email || 'имя пользователя отсутствует'
     },
     jiraUser() {
       return this.Jira_Users.find((user) => user.email === this.email)
@@ -239,7 +237,7 @@ export default {
           { username: this.jiraUser.user_name },
           { root: true }
         )
-        .then((res) => {
+        .then(() => {
           this.addPrevMonthToSalary()
           this.loader = false
         })

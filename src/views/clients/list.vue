@@ -283,7 +283,7 @@ export default {
   computed: {
     variables() { return variables },
     selectedHeaders() { return this.tableHeaders.filter(header => header.selected) },
-    userRole() { return this.$store.getters.userRole },
+    userRole() { return this.$store.getters["auth/currentUser"]?.roles },
     calcTableData() { return this.$refs[`${reference}`].$children[0].filteredItems },
   },
 

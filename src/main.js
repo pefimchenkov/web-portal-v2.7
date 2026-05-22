@@ -19,10 +19,13 @@ import VueTinyLazyloadImg from 'vue-tiny-lazyload-img'
 
 import router from './router'
 import store from './store'
-import { initApp } from './utils/initapp.js'
+//import { initApp } from './utils/initapp.js'
 
-import '@/permission'
+
+//import '@/permission_new'
 import acl from './acl'
+
+
 
 
 Vue.use(Vuetify)
@@ -58,7 +61,9 @@ new Vue({
   /* provide: {
     vueWorker: VueWorker,
    }, */
-  created() { initApp() },
+  created() {
+    /* initApp() */
+  },
   render: h => h(App)
 
 }).$mount('#app')

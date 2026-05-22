@@ -181,7 +181,7 @@ export default {
     },
 
     currentUser() {
-      return this.users.find(user => user.email === this.$store.getters.currentUser?.email)
+      return this.users.find(user => user.email === this.$store.getters["auth/currentUser"]?.email)
     },
 
     averageRating() {

@@ -65,6 +65,7 @@
             </v-col>
             <v-col cols="12">
               <el-row type="flex" :gutter="10">
+
                 <el-col>
                   <h4 class="mb-3">Склад СЦ</h4>
                   <v-combobox
@@ -90,6 +91,7 @@
                     </template>
                   </v-combobox>
                 </el-col>
+
                 <el-col>
                   <h4 class="mb-3">Склад отдела продаж</h4>
                   <v-combobox
@@ -115,6 +117,7 @@
                     </template>
                   </v-combobox>
                 </el-col>
+
                 <el-col>
                   <h4 class="mb-3">Склад производство</h4>
                   <v-combobox
@@ -140,6 +143,33 @@
                     </template>
                   </v-combobox>
                 </el-col>
+
+                <el-col>
+                  <h4 class="mb-3">Склад долговой</h4>
+                  <v-combobox
+                    v-model="adresses_debt_"
+                    label="Адреса **"
+                    chips
+                    multiple
+                    append-icon=""
+                    outlined
+                  >
+                    <template v-slot:selection="{ attrs, item, select, selected }">
+                      <v-chip
+                        small
+                        v-bind="attrs"
+                        :input-value="selected"
+                        close
+                        :disabled="disabledDebt(item)"
+                        @click="select"
+                        @click:close="removeFromAdesessDebt(item)"
+                      >
+                        {{ item }}
+                      </v-chip>
+                    </template>
+                  </v-combobox>
+                </el-col>
+
               </el-row>
             </v-col>
           </v-row>
@@ -151,7 +181,7 @@
           ><el-button
             type="success"
             plain
-            @click="save(articul_, partNum_, codeZip_, name_, artTSD_, adresses_service_, adresses_sale_, adresses_repair_)"
+            @click="save(articul_, partNum_, codeZip_, name_, artTSD_, adresses_service_, adresses_sale_, adresses_repair_, adresses_debt_)"
             >Сохранить</el-button
           ></el-row
         >
@@ -199,6 +229,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    adresses_debt: {
+      type: Array,
+      default: () => [],
+    },
     articul: {
       type: String,
       default: null,
@@ -219,6 +253,7 @@ export default {
       adresses_service_: [],
       adresses_sale_: [],
       adresses_repair_: [],
+      adresses_debt_:[],
       articul_: null,
       loading: false,
 
@@ -297,17 +332,19 @@ export default {
   },
 
   methods: {
-    save(id, pn, codeZip = null, name, artTSD, adresses_service, adresses_sale, adresses_repair) {
+    save(id, pn, codeZip = null, name, artTSD, adresses_service, adresses_sale, adresses_repair, adresses_debt) {
       this.loading = true
       let new_adresses_service = []
       let new_adresses_sale = []
       let new_adresses_repair = []
+      let new_adresses_debt = []
 
       if (this.$refs.name.validate() && this.$refs.pn.validate() && this.$refs.codeZip.validate() && this.$refs.artTSD.validate()) {
 
         const not_editable_adresses_service = this.adresses_service.filter(i => !i.autoUpdated).map(i => i.adress)
         const not_editable_adresses_sale = this.adresses_sale.filter(i => !i.autoUpdated).map(i => i.adress)
         const not_editable_adresses_repair = this.adresses_repair.filter(i => !i.autoUpdated).map(i => i.adress)
+        const not_editable_adresses_debt = this.adresses_debt.filter(i => !i.autoUpdated).map(i => i.adress)
 
         adresses_service.forEach(a => {
           if (not_editable_adresses_service.includes(a)) return
@@ -323,6 +360,11 @@ export default {
           if (not_editable_adresses_repair.includes(a)) return
           new_adresses_repair.push({ adress: a, autoUpdated: true, warehouse: '7b044cba-3d4f-11ea-8265-001dd8b72066' })
         })
+
+        adresses_debt.forEach(a => {
+          if (not_editable_adresses_debt.includes(a)) return
+          new_adresses_debt.push({ adress: a, autoUpdated: true, warehouse: 'f91c1070-d984-11f0-8853-00155dd21b64' })
+        })
       
         const data = {
           articul: id,
@@ -330,7 +372,7 @@ export default {
           partNum: pn,
           ShortName: name,
           artTSD: artTSD,
-          adresses: [ ...new_adresses_service, ...new_adresses_sale, ...new_adresses_repair ],
+          adresses: [ ...new_adresses_service, ...new_adresses_sale, ...new_adresses_repair, ...new_adresses_debt ],
         };
 
         console.log(data)
@@ -344,13 +386,6 @@ export default {
                 this.$emit('update', data)
               }, 1000)
             }
-            /* const all_asresses = [
-              ...data.adresses,
-              ...not_editable_adresses_service.map(a => ({ adress: a, autoUpdated: false })),
-              ...not_editable_adresses_sale.map(a => ({ adress: a, autoUpdated: false })),
-              ...not_editable_adresses_repair.map(a => ({ adress: a, autoUpdated: false }))
-          ]
-            data.adresses = all_asresses */
           })
           .catch(err => {
             console.log(err)
@@ -359,6 +394,7 @@ export default {
           .finally(() => this.loading = false)
 
       } else {
+        this.loading = false;
         return this.$store.commit("setError", "Не заполнены необходимые поля!");
       }
     },
@@ -372,6 +408,11 @@ export default {
     removeFromAdesessRepair(item) {
       this.adresses_repair_ = this.adresses_repair_.filter(i => i !== item)
     },
+    removeFromAdesessDebt(item) {
+      this.adresses_debt_ = this.adresses_debt_.filter(i => i !== item)
+    },
+
+
     disabledService(item) {
       const el = this.adresses_service.find(i => i.adress === item)
       if (!el) return false
@@ -384,6 +425,11 @@ export default {
     },
     disabledRepair(item) {
       const el = this.adresses_repair.find(i => i.adress === item)
+      if (!el) return false
+      return !el?.autoUpdated
+    },
+    disabledDebt(item) {
+      const el = this.adresses_debt.find(i => i.adress === item)
       if (!el) return false
       return !el?.autoUpdated
     },

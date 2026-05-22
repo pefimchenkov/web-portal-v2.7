@@ -1,14 +1,17 @@
 <template>
   <div class="mt-3">
+
     <el-dialog :visible.sync="dialog" :show-close="false" :close-on-click-modal="false" :close-on-press-escape="false" width="400px">
       <Permissions
         v-if="dialog"
-        :roles="config ? userRoles : null"
-        :uid="selected ? selected.uid : null"
+        :roles="userRoles || null"
+        :_id="selected?._id || null"
         @close="closeDialog"
         @update="updateRoles"
       />
     </el-dialog>
+
+
     <v-card>
       <v-card-text class="body-1 grey lighten-5 text-center">Управление пользователями</v-card-text>
       <v-sheet class="pa-1 grey lighten-4">
@@ -33,7 +36,7 @@
             :active.sync="active"
             :items="items"
             item-text="name"
-            item-key="uid"
+            item-key="_id"
             :load-children="fetchUsers"
             :open.sync="open"
             :search="search"
@@ -63,7 +66,7 @@
             </div>
             <el-card
               v-else
-              :key="selected.uid"
+              :key="selected?._id"
               :body-style="{
                 'padding':'20px',
                 'width':'600px',
@@ -71,11 +74,12 @@
               }"
               style="margin: 0 auto; height: fit-content;"
             >
-              <div v-loading="!avatar">
+              <div>
 
                 <v-img
+                  v-loading="!avatar"
                   :lazy-src="avatar"
-                  max-width="150"
+                  max-width="100"
                   :src="avatar"
                   style="margin: 0 auto;"
                 >
@@ -94,10 +98,10 @@
                 </v-img>
 
                 <h3 class="headline mb-2">
-                  {{ selected.name }}
+                  {{ selected?.name }}
                 </h3>
-                <div class="blue--text mb-2">{{ selected.email }}</div>
-                <div class="blue--text subheading font-weight-bold">{{ selected.uid }}</div>
+                <div class="blue--text mb-2">{{ selected?.email }}</div>
+                <div class="blue--text subheading font-weight-bold">{{ selected?._id }}</div>
               </div>
 
               <v-divider style="margin: 15px auto" />
@@ -111,22 +115,15 @@
               </el-row>
 
               <v-divider />
-              <v-row
-                v-if="config"
-                class="text-left"
-                tag="v-card-text"
-              >
-                <v-row
-                  class="text-left"
-                  tag="v-card-text"
-                >
-                  <v-col cols="4" class="text-right" tag="strong">Роль:</v-col>
-                  <v-col>{{ userRoles | translateRoles }}</v-col>
-                  <v-col cols="1">
-                    <v-icon small @click="dialog = true">mdi-pencil</v-icon>
-                  </v-col>
-                </v-row>
-              </v-row>
+
+              <el-row type="flex" style="margin: 10px">
+                <el-col class="text-right" tag="strong">Роль:</el-col>
+                <el-col>{{ userRoles | translateRoles }}</el-col>
+                <el-col >
+                  <i class="el-icon-edit" style="cursor: pointer" @click="dialog = true"></i>
+                </el-col>
+              </el-row>
+
             </el-card>
           </v-scroll-y-transition>
         </v-col>
@@ -136,14 +133,6 @@
 </template>
 
 <script>
-
-const avatars = [
-  '?accessoriesType=Blank&avatarStyle=Circle&clotheColor=PastelGreen&clotheType=ShirtScoopNeck&eyeType=Wink&eyebrowType=UnibrowNatural&facialHairColor=Black&facialHairType=MoustacheMagnum&hairColor=Platinum&mouthType=Concerned&skinColor=Tanned&topType=Turban',
-  '?accessoriesType=Sunglasses&avatarStyle=Circle&clotheColor=Gray02&clotheType=ShirtScoopNeck&eyeType=EyeRoll&eyebrowType=RaisedExcited&facialHairColor=Red&facialHairType=BeardMagestic&hairColor=Red&hatColor=White&mouthType=Twinkle&skinColor=DarkBrown&topType=LongHairBun',
-  '?accessoriesType=Prescription02&avatarStyle=Circle&clotheColor=Black&clotheType=ShirtVNeck&eyeType=Surprised&eyebrowType=Angry&facialHairColor=Blonde&facialHairType=Blank&hairColor=Blonde&hatColor=PastelOrange&mouthType=Smile&skinColor=Black&topType=LongHairNotTooLong',
-  '?accessoriesType=Round&avatarStyle=Circle&clotheColor=PastelOrange&clotheType=Overall&eyeType=Close&eyebrowType=AngryNatural&facialHairColor=Blonde&facialHairType=Blank&graphicType=Pizza&hairColor=Black&hatColor=PastelBlue&mouthType=Serious&skinColor=Light&topType=LongHairBigHair',
-  '?accessoriesType=Kurt&avatarStyle=Circle&clotheColor=Gray01&clotheType=BlazerShirt&eyeType=Surprised&eyebrowType=Default&facialHairColor=Red&facialHairType=Blank&graphicType=Selena&hairColor=Red&hatColor=Blue02&mouthType=Twinkle&skinColor=Pale&topType=LongHairCurly'
-]
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -155,6 +144,7 @@ export default {
 
   filters: {
     translateRoles(val) {
+      console.log(val)
       return val.map(item => Roles.find(i => i.eng === item)?.rus).join(', ')
     }
   },
@@ -175,7 +165,7 @@ export default {
   },
   computed: {
     ...mapState({
-      fbUsers: state => state.fb.users,
+      //fbUsers: state => state.fb.users,
       JiraUsers: state => state.jira_users.JIRA_USERS,
       config: state => state.fb.selectedUserData.config,
       company: state => state.fb.selectedUserData.info ? (state.fb.selectedUserData.info.company || 'не заполнено') : 'не заполнено',
@@ -186,6 +176,10 @@ export default {
       info: state => state.fb.selectedUserData.info
       // UserData: state => state.fb.selectedUserData
     }),
+
+    Users() {
+      return this.$store.getters["auth/users"]
+    },
 
     items() {
       return [
@@ -198,15 +192,17 @@ export default {
 
     selected() {
       if (!this.active.length) return undefined
-      this.$store.dispatch('fb/getSelectedUserData', { uid: this.active[0] }, { root: true })
-      return this.users.find(user => user.uid === this.active[0])
+      //this.$store.dispatch('fb/getSelectedUserData', { uid: this.active[0] }, { root: true })
+      return this.users.find(user => user._id === this.active[0])
     },
+
+
     filter() {
       return (item, search, textKey) => item[textKey].indexOf(search) > -1
     },
 
     userRoles() {
-      return this.config.userRole.split('&') || []
+      return this.selected?.roles || []
     }
   },
 
@@ -218,7 +214,8 @@ export default {
 
   async created() {
     await this.$store.dispatch('fetchJiraUsers')
-    await this.$store.dispatch('fb/getUsers', { root: true })
+    //await this.$store.dispatch('fb/getUsers', { root: true })
+    await this.$store.dispatch('auth/getUsers', { root: true })
   },
 
 
@@ -227,13 +224,18 @@ export default {
     async fetchUsers(item) {
       try {
         const data = await this.getUsersFromDB()
+
+        console.log(data)
+
         data.forEach(element => {
           if (this.JiraUsers.find(user => user.email === element.email)) {
             element.name = this.JiraUsers.find(user_1 => user_1.email === element.email).display_name
           }
         })
+
         const newData = data.filter(item_1 => item_1.name)
         item.children.push(...newData)
+
       } catch (err) {
         return console.warn(err)
       }
@@ -242,14 +244,13 @@ export default {
     getUsersFromDB() {
       return new Promise(resolve => {
         pause(1000)
-        resolve(this.fbUsers.users)
+        resolve(this.Users)
       })
     },
 
     randomAvatar() {
-      this.avatar = this.selected.providerData[0].photoURL
-        ? this.selected.providerData[0].photoURL
-        : `https://avataaars.io/` + avatars[Math.floor(Math.random() * avatars.length)]
+      /* this.avatar = this.selected?.providerData[0]?.photoURL || `https://avataaars.io/` + avatars[Math.floor(Math.random() * avatars.length)] */
+      this.avatar = `https://ui-avatars.com/api/?background=0D8ABC&rounded=true&size=64&color=fff&name=${this.selected?.name }`
     },
 
     closeDialog(payload) {
@@ -257,7 +258,9 @@ export default {
     },
 
     updateRoles(payload) {
-      this.config.userRole = payload.data
+      console.log(payload)
+      this.selected.roles = payload
+      this.$notify({ type: "success", message: "Роли успешно обновлены!" })
     },
 
     handleSearch(input) {

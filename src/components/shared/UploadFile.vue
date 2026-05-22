@@ -100,7 +100,7 @@ export default {
           })
       } else if (this.xls2json) {
         this.localLoading = true
-        const email = this.$store.getters.currentUser.email
+        const email = this.$store.getters["auth/currentUser"]?.email
 
         excelToDB(urlXls2json, [this.xls2json, email])
           .then((response) => {

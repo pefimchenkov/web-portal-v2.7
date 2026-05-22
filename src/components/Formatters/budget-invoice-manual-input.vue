@@ -60,7 +60,8 @@ export default {
     },
 
     isAdmin() {
-      return this.$store.getters.userRole.find(role => role === "admin");
+      return this.$store.getters.isAdmin
+      //return this.$store.getters.userRole.find(role => role === "admin");
     }
 
   },

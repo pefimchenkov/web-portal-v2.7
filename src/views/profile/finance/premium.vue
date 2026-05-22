@@ -54,9 +54,7 @@ export default {
     }),
 
     email() {
-      return this.$store.getters.currentUser
-        ? this.$store.getters.currentUser.email
-        : 'имя пользователя отсутствует'
+      return this.$store.getters["auth/currentUser"]?.email || 'имя пользователя отсутствует'
     },
 
     jiraUser() {

@@ -493,7 +493,7 @@ export default {
     },
 
     user() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     },
 
     project1C() {

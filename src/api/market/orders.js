@@ -18,6 +18,28 @@ export function getParts(params) {
 
   })
 }
+
+export function getPurchases(params) {
+  return request({
+
+    url: '/market/orders/purchases',
+    method: 'get',
+    params
+
+  })
+}
+
+export function getClientTasks(data) {
+  return request({ 
+
+    url: '/market/orders/client_tasks',
+    method: 'post',
+    data
+
+  })
+}
+
+
 export function getSales(params) {
   return request({
 
@@ -68,33 +90,6 @@ export function createSale(data) {
 
   })
 }
-export function linkSale(data) {
-  return request({
-
-    url: '/market/orders/sale',
-    method: 'put',
-    data
-
-  })
-}
-export function unlinkSale(data) {
-  return request({
-
-    url: '/market/orders/sale',
-    method: 'delete',
-    data
-
-  })
-}
-export function remove(data) {
-  return request({
-
-    url: '/market/orders',
-    method: 'delete',
-    data
-
-  })
-}
 
 
 export function createPurchase(data) {
@@ -106,6 +101,30 @@ export function createPurchase(data) {
 
   })
 }
+
+
+/* ************ */
+
+export function linkOrder(data) {
+  return request({
+
+    url: '/market/orders/order',
+    method: 'put',
+    data
+
+  })
+}
+export function unlinkOrder(data) {
+  return request({
+
+    url: '/market/orders/order',
+    method: 'delete',
+    data
+
+  })
+}
+
+
 export function linkPurchase(data) {
   return request({
 
@@ -115,10 +134,23 @@ export function linkPurchase(data) {
 
   })
 }
+
+
 export function unlinkPurchase(data) {
   return request({
 
     url: '/market/orders/purchase',
+    method: 'delete',
+    data
+
+  })
+}
+
+
+export function remove(data) {
+  return request({
+
+    url: '/market/orders',
     method: 'delete',
     data
 

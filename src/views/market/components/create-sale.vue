@@ -289,15 +289,19 @@ export default {
   computed: {
 
     currentUser() {
-      return (this.$store.getters.currentUser && this.$store.getters.jira_users) ? this.jiraUsers.find(u => u.email === this.$store.getters.currentUser.email) : null
+      return this.$store.getters["auth/currentUser"]
+    },
+
+    currentJiraUser() {
+      return this.jiraUsers.find(user => user.email === this.currentUser?.email);
     },
 
     displayName() {
-      return (this.$store.getters.currentUser && this.$store.getters.jira_users) ? this.jiraUsers.find(u => u.email === this.$store.getters.currentUser.email).display_name : null
+      return this.jiraUsers.find(user => user.email === this.currentUser?.email)?.display_name;
     },
 
     jiraUsers() {
-      return this.$store.getters.jira_users || []
+      return this.$store.getters["jira/users"] || [];
     },
 
     clients() {
@@ -324,11 +328,15 @@ export default {
 
   watch: {
 
-    show(val) {
+    async show(val) {
       this.dialogFormVisible = val
       this.form.theme = this.theme
       this.form.total = this.total
       this.form.comment = this.comment
+
+      if (!this.jiraUsers.length)
+        await this.$store.dispatch('jira/users');
+
       this.$store.dispatch('clients/getClients')
     }
 
@@ -353,11 +361,15 @@ export default {
     save(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          createSale({ form: this.form, id: this.id, user: this.currentUser })
+          createSale({ form: this.form, id: this.id, user: this.currentJiraUser })
             .then(res => {
+              console.log(res)
               this.close()
               this.$message({ type: 'success', message: res })
               this.$emit('update')
+            })
+            .catch(err => {
+              console.log('createSale', err)
             })
         } else {
           console.log('Ошибка отправки формы!')

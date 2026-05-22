@@ -140,6 +140,23 @@ export function getAtlasOutgoingPayments(data) {
   })
 }
 
+export function getMovements(data) {
+  return request({
+
+    url: '/api/1c/movements/get',
+    method: 'post',
+    data
+
+  })
+}
+
+
+///////////////////////////////
+///////////////////////////////
+///////////////////////////////
+
+
+
 export function updateOutgoingPayments(data) {
   return request({
 

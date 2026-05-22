@@ -73,6 +73,14 @@ export function getClosedIssuance(params) {
   })
 }
 
+export function getClosedNoms(params) {
+  return request({
+    url: '/statistics/remonts/closed_noms',
+    method: 'get',
+    params
+  })
+}
+
 
 
 /* ****************** */

@@ -51,7 +51,7 @@
         >
         </Crm>
         
-        <v-container v-else-if="!crmAccess && !userRole">
+        <v-container v-else-if="!crmAccess && !userRoles">
           <v-row justify="center" align="center" style="height: 300px;">
             <v-progress-circular :size="100" color="primary" indeterminate />
           </v-row>
@@ -109,27 +109,32 @@ export default {
     clients() {
       return this.$store.getters.clients || []
     },
+
     JiraUsers() {
       return this.$store.state.jira_users.JIRA_USERS || []
     },
+
     formTitleSN() {
       return this.editedIndexSN === -1 ? 'Новая позиция' : 'Редактирование'
     },
+
     Edit() {
       return new AclRule('leadEngineer').or('snEditor').or('financier').or('admin').generate()
     },
-    userRole() {
-      return this.$store.getters.userRole
+
+    userRoles() {
+      return this.$store.getters["auth/currentUser"]?.roles
     },
+
     crmAccess() {
-      if (this.userRole.find(item => item === 'admin') || this.userRole.find(item => item === 'financier') || this.userRole.find(item => item === 'crm')) {
-        return true
-      } else return false
+      return (this.userRoles.find(item => item === 'admin') || this.userRoles.find(item => item === 'financier') || this.userRoles.find(item => item === 'crm'))
     },
+
     ParentName() {
       const obj = this.clients.find(item => parseInt(item.ID) === parseInt(this.id))
       return obj ? obj.NAME + ' (' + obj.PROJECT + ')' : null
     },
+
     statusCRM() {
       const obj = this.clients.find(item => parseInt(item.ID) === parseInt(this.id))
       return obj ? !!obj.CRM : false

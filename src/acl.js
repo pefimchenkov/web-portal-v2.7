@@ -28,8 +28,12 @@ export default new AclCreate({
     User: new AclRule('user').or('financier').or('engineer').or('manager').or('leadEngineer').or('serviceManager').or('superFinancier').or('limitedFinancier').or('admin').generate(),
     Public: new AclRule('public').or('user').or('financier').or('engineer').or('manager').or('leadEngineer').or('serviceManager').or('superFinancier').or('limitedFinancier').or('admin').generate(),
   },
+
+  
   middleware: async acl => {
-    const userRole = await store.getters.userRole
-    if (userRole.length > 0) acl.change(userRole)
+    const currentUser = await store.getters["auth/currentUser"]
+    if (currentUser?.roles?.length > 0) {
+      acl.change(currentUser?.roles)
+    }
   }
 })

@@ -104,7 +104,7 @@
 
 <script>
 import Photos from './photos.vue'
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import { AclRule } from 'vue-acl'
 
 export default {

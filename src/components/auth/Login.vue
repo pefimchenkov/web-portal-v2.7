@@ -46,7 +46,8 @@
         </el-form-item>
       </el-tooltip>
 
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="onSubmit">Войти</el-button>
+      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:20px;" @click.native.prevent="onSubmit">Войти</el-button>
+      <p @click.prevent="register" style="color:aliceblue; text-align: center; cursor: pointer">Зарегистрироваться</p>
     </el-form>
   </div>
 </template>
@@ -54,6 +55,7 @@
 <script>
 
 import { validEmail } from '@/utils/validate'
+
 
 export default {
   name: 'Login',
@@ -67,8 +69,8 @@ export default {
       }
     }
     const validatePassword = (rule, value, callback) => {
-      if (value.length < 6 || value.length > 20) {
-        callback(new Error('Пароль не должен быть менее 6 и более 20 символов!'))
+      if (value.length < 12 || value.length > 20) {
+        callback(new Error('Пароль не должен быть менее 12 и более 20 символов!'))
       } else {
         callback()
       }
@@ -105,15 +107,7 @@ export default {
     immediate: true
   },
 
-  /* created() {
 
-    if (this.$route.query['loginError']) {
-
-      this.$store.dispatch('setError', 'Пожалуйста, авторизуйтесь, чтобы иметь доступ к этой странице!')
-
-    }
-
-  }, */
 
   mounted() {
     if (this.loginForm.email === '') {
@@ -141,23 +135,38 @@ export default {
     },
 
     onSubmit() {
-      this.$refs.loginForm.validate(valid => {
+      this.$refs.loginForm.validate(async valid => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('loginUser', this.loginForm)
-            .then(() => {
+          //this.$store.dispatch('loginUser', this.loginForm) 
+
+            try {
+              await this.$store.dispatch('auth/login', this.loginForm)
+
+              const redirect = this.$route.query.redirect || '/dashboard';
+              this.$router.push(redirect);
+            } catch (err) {
+              this.loading = false
+              this.$notify({ type: "error", message: err.response.data.message })
+            }
+            
+            /* .then(() => {
               this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
               this.loading = false
             })
             .catch(() => {
               this.loading = false
-            })
+            }) */
         } else {
           console.log('Ошибка входа!')
           this.$store.commit('setError', 'Ошибка входа!')
           return false
         }
       })
+    },
+
+    register() {
+      this.$router.push({ path: "/register" })
     },
 
     getOtherQuery(query) {

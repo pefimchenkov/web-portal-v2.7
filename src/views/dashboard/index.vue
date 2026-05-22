@@ -5,7 +5,6 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import authDashboard from './auth'
 import noAuthDashboard from './noauth'
 
@@ -24,15 +23,14 @@ export default {
 
   computed: {
 
-    ...mapGetters({ roles: 'userRole' })
+    roles() {
+      return this.$store.getters["auth/currentUser"]?.roles
+    }
 
   },
 
   async created() {
-
-    const user = await this.$store.dispatch('getUsersKey');
-    console.log('USERS: ', user)
-
+    await this.$store.dispatch('getUsersKey');
   }
 
 }

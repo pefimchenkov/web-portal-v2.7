@@ -57,7 +57,7 @@
 
 <script>
 
-import { getPurchases, linkOrder } from '@/api/market/orders'
+import { getPurchases, linkPurchase } from '@/api/market/orders'
 
 import { mapGetters } from 'vuex'
 
@@ -97,7 +97,7 @@ export default {
     ...mapGetters({ market: 'market_new/market' }),
 
     user() {
-      return this.$store.getters.currentUser ? this.$store.getters.currentUser.email : null
+      return this.$store.getters["auth/currentUser"]?.email || null
     }
 
   },
@@ -141,7 +141,7 @@ export default {
     save() {
       this.$refs['form'].validate((valid) => {
         if (valid) {
-          linkOrder({ order: this.form.purchase, id: this.id })
+          linkPurchase({ order: this.form.purchase, id: this.id })
             .then(res => {
               this.close()
               this.$message({ type: 'success', message: res })

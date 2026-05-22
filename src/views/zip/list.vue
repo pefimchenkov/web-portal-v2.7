@@ -63,17 +63,18 @@
               name="zipColumn"
             />
           </el-dropdown-item>
+
           <el-dropdown-item>
-            <!-- Экспорт -->
             <download-excel
               v-if="$refs[`${reference}`]"
               :fields="headersToObject(selectedHeaders)"
-              :data="$refs[`${reference}`].$children[0].filteredItems"
+              :data="$refs[`${reference}`].$children[0]?.filteredItems"
               :name="exportFileName"
             >
               Экспорт в Excel
             </download-excel>
           </el-dropdown-item>
+
         </el-dropdown-menu>
       </el-dropdown>
 
@@ -245,7 +246,7 @@ export default {
   computed: {
     variables() { return variables },
     selectedHeaders() { return this.tableHeaders.filter(header => header.selected) },
-    user() { return this.$store.getters.currentUser },
+    user() { return this.$store.getters["auth/currentUser"] },
     accessEdit() { return new AclRule('leadEngineer').or('nom').or('admin').generate() },
     accessDelete() { return new AclRule('nom').or('admin').generate() },
 
@@ -333,9 +334,9 @@ export default {
       hideDialogItems(this.dialogItems, marketFieldsPlusParts) // скрываем блок `Маркет` от редактирования
       this.dialog = true
       this.action = 'update'
-      const selectedModels = item.zipMODELS.split(', ').map(row => this.Models.find(item => item.MODEL === row))
-      const selectedTypes = this.ProductsType.find(obj => obj.name === item.zipTYPE)
-      const selectedClass = this.ProductsClass.find(obj => obj.name === item.zipCLASS)
+      const selectedModels = item.zipMODELS?.split(', ').map(row => this.Models.find(item => item.MODEL === row))
+      const selectedTypes = this.ProductsType?.find(obj => obj.name === item.zipTYPE)
+      const selectedClass = this.ProductsClass?.find(obj => obj.name === item.zipCLASS)
 
       this.prevItem = {
         ...item,
@@ -373,6 +374,7 @@ export default {
     },
 
     async updateZip(form) {
+
       updateOne({ newData: form, prevData: this.prevItem })
         .then(res => {
           this.close()

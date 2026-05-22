@@ -696,7 +696,7 @@ export default {
       return new AclRule('user').and('engineer').or('admin').generate()
     },
     user() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     }
 
   },

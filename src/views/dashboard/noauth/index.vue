@@ -32,9 +32,12 @@ export default {
   computed: {
     ...mapGetters([
       'name',
-      'avatar',
-      'userRole'
-    ])
+      'avatar'
+    ]),
+
+    userRole() {
+      return this.$store.getters["auth/currentUser"]?.roles
+    }
   }
 }
 </script>

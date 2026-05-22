@@ -4,6 +4,7 @@ import SkladUpdated from '@/components/Formatters/market-sklad.vue'
 import Image from '@/components/Formatters/image.vue'
 import MarketSebesColor from '@/components/Formatters/market-sebes-color.vue'
 import EditSkladIm from '@/components/Formatters/edit-sklad-im.vue'
+import EditSkladABS from '@/components/Formatters/edit-sklad-abs.vue'
 
 import { validateArt } from './utils.js'
 
@@ -51,14 +52,14 @@ const templateHeaders = [
   { text: 'Стоковая', value: 'marketPRICE', sortable: 'custom', },
   { text: 'Себ.(₽)', value: 'priceSTOCK', sortable: 'custom', formatter: MarketSebesColor },
   { text: 'Себ. 1c ТСД', value: 'sebT', sortable: 'custom', formatter: MarketSebesColor },
-  { text: 'Себ. 1c Атлас', value: 'sebA', sortable: 'custom', formatter: MarketSebesColor },
+  { text: 'Себ. 1c (с НДС)', value: 'sebA', sortable: 'custom', formatter: MarketSebesColor },
   { text: 'Прод.(₽)', value: 'priceCLIENT', sortable: 'custom', },
   { text: 'Партн.(₽)', value: 'pricePART', sortable: 'custom', },
   { text: 'Опт.(₽)', value: 'priceOPT', sortable: 'custom', },
   { text: 'Склад ТСД', value: 'marketSKLAD', sortable: 'custom', formatter: SkladUpdated },
   { text: 'Склад Атлас', value: 'marketATLAS', sortable: 'custom', },
   { text: 'Заказ', value: 'marketZAKAZ', sortable: 'custom', },
-  { text: 'Склад ABS', value: 'marketABS', sortable: 'custom', },
+  { text: 'Склад ABS', value: 'marketABS', sortable: 'custom', formatter: EditSkladABS },
   { text: 'Склад ИМ', value: 'marketIM', sortable: 'custom', formatter: EditSkladIm },
   { text: 'Адрес на складе ИМ', value: 'marketIMAddress', sortable: 'custom', width: 120, },
   { text: 'Комментарий (склад ИМ)', value: 'marketIMComment', sortable: 'custom' },

@@ -36,7 +36,7 @@ export default {
   },
 
   computed: {
-    user() { return this.$store.getters.currentUser }
+    user() { return this.$store.getters["auth/currentUser"] }
   }
 }
 </script>

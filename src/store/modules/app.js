@@ -1,5 +1,7 @@
 import Cookies from 'js-cookie'
-import fb from '@/services/firabase'
+//import fb from '@/services/firabase'
+//import store from '@/store'
+import api from '@/services/api';
 
 const state = {
   sidebar: {
@@ -20,23 +22,33 @@ const mutations = {
       Cookies.set('sidebarStatus', 0)
     }
   },
+
   CLOSE_SIDEBAR: (state, withoutAnimation) => {
     Cookies.set('sidebarStatus', 0)
     state.sidebar.opened = false
     state.sidebar.withoutAnimation = withoutAnimation
   },
+
   TOGGLE_DEVICE: (state, device) => {
     state.device = device
   },
+
   SET_SIZE: (state, size) => {
     state.size = size
     Cookies.set('size', size)
   },
+
   SET_TABLE_COLUMNS: (state, { name, columns }) => {
     if (localStorage.getItem(name)) localStorage.removeItem(name)
     localStorage.setItem(name, JSON.stringify(columns))
+  },
+
+  UPDATE_USER: (state, payload) => {
+    localStorage.setItem('user', JSON.stringify(payload));
   }
 }
+
+
 
 const actions = {
   toggleSideBar({ commit }) {
@@ -51,10 +63,32 @@ const actions = {
   setSize({ commit }, size) {
     commit('SET_SIZE', size)
   },
-  async setTableColumns({ commit, rootGetters }, payload) {
+
+
+
+  async setTableColumns({ commit }, payload) {
+    const data = {}
+    const { email, name, columns } = payload
+    data[name] = columns
+
+    await api
+      .post('/user/set_table_column', { email, payload })
+      .then(({ data }) => {
+        commit('SET_TABLE_COLUMNS', payload)
+        commit('UPDATE_USER', data.user)
+      })
+      .catch(err => {
+        throw err
+      }) 
+  },
+
+
+
+  /* async setTableColumns({ commit, rootGetters }, payload) {
     const data = {}
     const { name, columns } = payload
     data[name] = columns
+
     try {
       await fb.database().ref(`/users/${rootGetters.user.id}/config`).update(data)
       commit('SET_TABLE_COLUMNS', payload)
@@ -62,19 +96,25 @@ const actions = {
     } catch (e) {
       return e.messsage
     }
-  },
-  async getTableColumns({ rootGetters, commit }, name) {
+  }, */
+
+  
+  /* async getTableColumns({ rootGetters, commit }, name) {
     try {
       const data = localStorage.getItem(name)
       if (data) return JSON.parse(data)
 
-      const res = await fb.database().ref(`/users/${rootGetters.user.id}/config/${name}`).once('value')
+      //const res = await fb.database().ref(`/users/${rootGetters.user.id}/config/${name}`).once('value')
+
+
       commit('SET_TABLE_COLUMNS', { name, columns: res.val() })
       return res.val()
     } catch (e) {
       return e.message
     }
-  }
+  } */
+
+
 }
 
 export default {

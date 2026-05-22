@@ -179,7 +179,7 @@ export default {
       this.editedItem = { ...item }
       delete (this.editedItem.SPEC)
       this.editedItem.ENDDATE = parseTime(this.editedItem.ENDDATE, '{y}-{m}-{d}')
-      this.editedItem.Email = this.$store.getters.currentUser.email
+      this.editedItem.Email = this.$store.getters["auth/currentUser"].email
       this.dialog = true
     },
 
@@ -201,7 +201,7 @@ export default {
 
     async add(item) {
       this.loading = true
-      item.EMAIL = this.$store.getters.currentUser.email
+      item.EMAIL = this.$store.getters["auth/currentUser"].email
       item.Client = +this.id
       return await add(item)
     },

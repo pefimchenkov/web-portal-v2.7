@@ -79,7 +79,20 @@
                       </el-tooltip>
                     </template>
 
-                    <template #[`item.marketPricePerOne`]="{ item }">
+
+                    <template v-if="BasketType.value === 'purchase'" #[`item.priceSTOCK`]="{ item }">
+                      {{
+                        item.priceSTOCK
+                          ? item.priceSTOCK.toLocaleString("ru", {
+                            style: "currency",
+                            currency: "RUB",
+                          })
+                          : ""
+                      }}
+                    </template>
+
+
+                    <template v-else #[`item.marketPricePerOne`]="{ item }">
                       <div style="display: flex">
                         <i
                           v-if="isPriceChanged(item)"
@@ -116,28 +129,6 @@
                           >mdi-pencil</v-icon>
                         </v-edit-dialog>
                       </div>
-                    </template>
-
-                    <template #[`item.sebA`]="{ item }">
-                      {{
-                        item.sebA
-                          ? item.sebA.toLocaleString("ru", {
-                            style: "currency",
-                            currency: "RUB",
-                          })
-                          : ""
-                      }}
-                    </template>
-
-                    <template #[`item.sebT`]="{ item }">
-                      {{
-                        item.sebT
-                          ? item.sebT.toLocaleString("ru", {
-                            style: "currency",
-                            currency: "RUB",
-                          })
-                          : ""
-                      }}
                     </template>
 
                     <template #[`item.marketTotal`]="{ item }">
@@ -363,8 +354,7 @@ export default {
         { text: 'Тип', value: 'marketTYPE', selected: true, divider: true },
         { text: 'Артикул', value: 'marketART', selected: true, divider: true },
         { text: 'Кол-во', value: 'Count', selected: true, width: 80, divider: true },
-        { text: 'Себ1сА', value: 'sebA', selected: true, divider: true },
-        { text: 'Себ1сТ', value: 'sebT', selected: true, divider: true },
+        { text: 'Себ.', value: 'priceSTOCK', selected: true, divider: true },
         {
           text: 'Цена за штуку',
           value: 'marketPricePerOne',
@@ -416,10 +406,12 @@ export default {
       CurrentBasket: (state) => state.market.Basket, // получаем из LS, например: [{ Count: 1, marketid: 100, Deviation: 50 }]
       Currency: (state) => state.currency.Currency
     }),
-    ...mapGetters({ Market: 'market_new/market', user: 'currentUser' }),
+
+    ...mapGetters({ Market: 'market_new/market', user: 'auth/currentUser' }),
     computedHeaders() {
       return this.headers.filter((item) => item.selected)
     },
+
     summOfStockPrices() {
       return (
         this.BasketItems.reduce((acc, item) => {
@@ -427,6 +419,7 @@ export default {
         }, 0) || 0
       )
     },
+    
     allZipDiscount() {
       return (
         this.BasketItems.reduce((acc, item) => {
@@ -499,6 +492,7 @@ export default {
     setup() {
       const marketInBasket = this.Market?.filter((item) => this.CurrentBasket.find((basket) => +basket.marketid === +item.marketid))
       console.log('Товары в корзине: ', marketInBasket)
+      console.log(this.$store.getters["auth/currentUser"]?.email)
       marketInBasket.map((item) => { item.marketPricePerOne = this.calculatePricePerOne(item) })
       this.BasketItems = [...marketInBasket]
       this.key++
@@ -555,7 +549,7 @@ export default {
     },
 
     getCurrency(data) {
-      return this.Currency.find((i) => i.sign === data).rate
+      return this.Currency.find((i) => i.sign === data)?.rate
     },
 
     isPriceChanged(item) {

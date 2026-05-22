@@ -19,8 +19,8 @@ const firms = [
 ]
 
 const templateHeaders = [
-  { text: 'Номер заказа', value: 'id', sortable: true, },
-  { text: 'SALE', value: 'sale_id', sortable: true, formatter: JiraLink },
+  { text: 'Номер заказа', value: 'id', sortable: true, width: 40, },
+  { text: 'SALE', value: 'jira_id', sortable: true, formatter: JiraLink },
   { text: 'Комментарий', value: 'comment', sortable: true, },
   { text: 'Тип цены', value: 'price_type', sortable: true, },
   { text: 'Фирма исполнитель', value: 'firm', sortable: true, },
@@ -28,5 +28,5 @@ const templateHeaders = [
   { text: 'Автор', value: 'reporter', sortable: true, },
   { text: 'Дата создания', value: 'created_date', sortable: true, },
   { text: 'Дата обновления', value: 'updated_date', sortable: true, },
-  { text: 'Действия', value: 'actions', fixed: 'right', width: 90 }
+  { text: 'Действия', value: 'actions', width: 50 }
 ]

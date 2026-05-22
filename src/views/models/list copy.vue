@@ -318,7 +318,7 @@
 </template>
 
 <script>
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import { AclRule } from 'vue-acl'
 import GetConfig from '@/services/GetConfig'
 import { mapGetters } from 'vuex'
@@ -623,7 +623,7 @@ export default {
     },
     deleteItem(item) {
       const index = this.Models.indexOf(item)
-      const userId = this.$store.getters.currentUser.email
+      const userId = this.$store.getters["auth/currentUser"]?.email
       if (confirm('Вы уверены, что хотите удалить эту Модель?')) {
         this.$store.commit('clearError')
         this.show = true
@@ -647,7 +647,7 @@ export default {
     save() {
       if (this.$refs.name.validate() && this.$refs.type.validate() && this.$refs.brands.validate() && this.$refs.category.validate() &&
 					this.$refs.profile.validate() && this.$refs.engineer.validate()) {
-        this.newItem.email = this.$store.getters.currentUser.email
+        this.newItem.email = this.$store.getters["auth/currentUser"].email
         const newModel = {}
         newModel.VENDOR = this.newItem.Brands.name
         newModel.TYPE = this.newItem.ModelsType.name

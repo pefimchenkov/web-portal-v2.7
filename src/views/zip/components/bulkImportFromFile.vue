@@ -93,7 +93,7 @@ export default {
           })
       } else if (this.xls2json) {
         this.$emit('setLoading', true)
-        const email = this.$store.getters.currentUser.email
+        const email = this.$store.getters["auth/currentUser"]?.email
 
         excelToDB(urlXls2json, [this.xls2json, email])
           .then(async response => {

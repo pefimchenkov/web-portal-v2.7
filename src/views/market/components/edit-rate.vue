@@ -35,7 +35,7 @@
 
 <script>
 
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import { eventBus } from '@/main.js'
 import { AclRule } from 'vue-acl'
 

@@ -231,8 +231,8 @@ export default {
     },
 
     randomAvatar() {
-      this.avatar = this.selected.providerData[0].photoURL
-        ? this.selected.providerData[0].photoURL
+      this.avatar = this.selected.providerData[0]?.photoURL
+        ? this.selected.providerData[0]?.photoURL
         : `https://avataaars.io/` + avatars[Math.floor(Math.random() * avatars.length)]
     },
 

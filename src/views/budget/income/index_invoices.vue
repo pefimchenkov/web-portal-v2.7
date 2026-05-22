@@ -297,7 +297,7 @@ export default {
     },
 
     email() {
-      return this.$store.state.user.currentUser.email
+      return this.$store.getters["auth/currentUser"]?.email
     },
 
   },

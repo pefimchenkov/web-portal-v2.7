@@ -1,5 +1,5 @@
 <template>
-  <div v-loading="!tableData.length" fluid :style="`height: 90vh` || !tableData.length">
+  <div v-loading="!tableData.length" fluid :style="`height: 80vh` || !tableData.length">
 
     <v-toolbar color="#eaeff5" class="text-lg-right elevation-2 mb-1" dense style="width: 100%">
       <v-toolbar-title>Заказы</v-toolbar-title>
@@ -40,7 +40,7 @@
     <!-- ТАБЛИЦА ЗАКАЗОВ -->
     <el-table
       v-if="tableData.length"
-      :data="filteredTableData"
+      :data="paginatedTableData"
       :max-height="showHeader ? WindowHeight : ''"
       border
       stripe
@@ -111,6 +111,14 @@
       </el-table-column>
     </el-table>
 
+    <pagination
+      v-show="total > 0"
+      :total="total"
+      :page.sync="listQuery.page"
+      :limit.sync="listQuery.limit"
+      @pagination="getPaginationData"
+    />
+
   </div>
 </template>
 
@@ -136,7 +144,8 @@ export default {
 
   components: {
     TableColumns: () => import('@/components/DataTable/columns.vue'),
-    TableFilters: () => import('@/components/TableFilters/index.vue')
+    TableFilters: () => import('@/components/TableFilters/index.vue'),
+    Pagination: () => import('@/components/Pagination'),
   },
 
   data() {
@@ -146,6 +155,7 @@ export default {
       tableData: [],
       options: {},
       filteredTableData: [],
+      paginatedTableData: [],
       tableHeaders: [],
       filters: {},
       formatters: [],
@@ -164,8 +174,25 @@ export default {
       headersToObject,
       reference,
       exportFileName,
+
+      total: 0,
+      listQuery: {
+        page: 1,
+        limit: 26
+      },
     }
   },
+
+  watch: {
+    filteredTableData: {
+      immediate: true,
+      deep: true,
+      handler() {
+        this.getPaginationData()
+      }
+    },
+  },
+
 
   computed: {
     selectedHeaders() { return this.tableHeaders.filter(header => header.selected) },
@@ -203,7 +230,7 @@ export default {
     },
 
     getWindowHeight(event) {
-      this.WindowHeight = event.target.innerHeight - 240
+      this.WindowHeight = event.target.innerHeight - 150
     },
 
     updateData() {
@@ -228,6 +255,12 @@ export default {
       this.filters = {}
       this.updateData()
     },
+
+    getPaginationData() {
+      this.paginatedTableData = this.filteredTableData.filter((item, index) => index < this.listQuery.limit * this.listQuery.page && index >= this.listQuery.limit * (this.listQuery.page - 1))
+      this.total = this.filteredTableData.length
+    },
+
 
     /* Форматирование входных данных */
 

@@ -373,7 +373,7 @@ export default {
     },
 
     currentUser() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     },
 
     positionDetailed() {

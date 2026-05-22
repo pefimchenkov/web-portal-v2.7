@@ -14,7 +14,11 @@
       :label="item.label"
     >
       <keep-alive>
-        <component :is="item.component" :items="item.data" :market="market" />
+        <component
+          :is="item.component"
+          :items="item.data"
+          :market="market"
+        />
       </keep-alive>
 
     </el-tab-pane>

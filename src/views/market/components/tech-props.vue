@@ -113,13 +113,13 @@ export default {
       return this.$store.getters.techPropertiesFit
     },
     CurrentUser() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     },
     JiraUsers() {
       return this.$store.getters.jira_users
     },
     CurrentUserName() {
-      return this.JiraUsers.find(user => user.email === this.CurrentUser.email).display_name
+      return this.JiraUsers.find(user => user.email === this.CurrentUser?.email).display_name
     }
   },
 

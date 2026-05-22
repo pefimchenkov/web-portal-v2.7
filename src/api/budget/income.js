@@ -166,6 +166,16 @@ export function setSm(data) {
   })
 }
 
+export function setEngineer(data) {
+  return request({
+
+    url: '/budget/income/set_engineer',
+    method: 'post',
+    data
+
+  })
+}
+
 export function setOm(data) {
   return request({
 

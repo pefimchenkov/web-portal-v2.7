@@ -1,4 +1,4 @@
-import Api from '@/services/Api'
+import Api from '@/services/___Api'
 import settings from '@/settings.js'
 
 import { sendOrderToSite } from '@/api/barcodespace'

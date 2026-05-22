@@ -398,56 +398,66 @@ export default {
     headers() {
       return this.dataHeader
     },
+
     periods() {
       return this.Salary.map(item => item.PERIOD === null ? 'Нет информации' : getMonthNameByNumber(item.PERIOD))
     },
+
     years() {
       return this.Salary.map(item => item.YEAR === null ? 'Нет информации' : item.YEAR)
     },
+
     users() {
       return this.Salary.map(item => item.USER === null ? 'Нет информации' : this.userName(item.USER))
     },
+
     jiraUser() {
       return this.Jira_Users.find((user) => user.email === this.email)
     },
+
     email() {
-      return this.$store.getters.currentUser
-        ? this.$store.getters.currentUser.email
-        : 'имя пользователя отсутствует'
+      return this.$store.getters["auth/currentUser"]?.email || 'имя пользователя отсутствует'
+
     },
+
     user_name() {
-      return this.jiraUser
-        ? this.jiraUser.user_name
-        : null
+      return this.jiraUser?.user_name || null
     },
+
     roles() {
-      return this.$store.getters.userRole
+      return this.$store.getters["auth/currentUser"].roles
     },
+
     tsdCash() {
       return this.Cash[0] && typeof (this.Cash[0].CASH) === 'number'
         ? 0 /* this.Cash[0].CASH */
         : 0
     },
+
     atlasCash() {
       return this.Cash[1] && typeof (this.Cash[1].CASH) === 'number'
         ? this.Cash[1].CASH
         : 0
     },
+
     sumTotal() {
       return ruFormatCurrency(this.$refs.finance.$children[0].filteredItems.reduce((acc, value) => {
         return acc + value.Total
       }, 0))
     },
+
     sumPaid() {
       return ruFormatCurrency(this.$refs.finance.$children[0].filteredItems.reduce((acc, value) => {
         return acc + value.Paid
       }, 0))
     },
+
     sumDebt() {
       return ruFormatCurrency(this.$refs.finance.$children[0].filteredItems.reduce((acc, value) => {
         return acc + value.Debt
       }, 0))
     },
+
     ...mapState({
       Jira_Users: (state) => state.jira_users.JIRA_USERS || [],
       Salary: (state) => state.finance.Salary || [],

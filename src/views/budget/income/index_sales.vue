@@ -134,7 +134,7 @@
             :filters="filters"
             :types="{
               Input: ['num', 'sfnum', 'sum', 'invoiceNum', 'iKey'],
-              MultiSelect: ['contractorName', 'om', 'sm', 'project'],
+              MultiSelect: ['contractorName', 'om', 'sm', 'lead_engineer', 'engineer', 'project'],
               Select: ['currency'],
               CheckBox: ['factoring', 'netting', 'dolg_red', 'dolg_orange', 'sale_sum'],
               Date: ['date', 'sfdate'],
@@ -159,6 +159,7 @@
             :options="{
               om: OM,
               sm: SM,
+              engineer: Engineer,
               project: Projects
             }"
             @update="editItem"
@@ -190,7 +191,7 @@
 import { templateHeaders, reference, exportFileName, dialogItems, dialogOptions, local_projects } from './data_sales.js'
 import { parseTime } from '@/utils'
 import { getUserName } from '@/filters/jira-users.js'
-import { getManualSales, getDataFromCrm, setManualSale, removeManualSale, setProfit, setOmPercent, setSmPercent, setProject, setOm, setSm } from '@/api/budget/income'
+import { getManualSales, getDataFromCrm, setManualSale, removeManualSale, setProfit, setOmPercent, setSmPercent, setProject, setOm, setSm, setEngineer } from '@/api/budget/income'
 import { createHeaders, createSelectOptionsFromTableData, headersToObject, setRemoteCustomSort, getSummariesRow } from '@/components/DataTable/utils.js'
 
 import { mapState } from 'vuex'
@@ -275,11 +276,11 @@ export default {
     },
 
     userRole() {
-      return this.$store.getters.userRole
+      return this.$store.getters["auth/currentUser"]?.roles
     },
 
     email() {
-      return this.$store.state.user.currentUser.email
+      return this.$store.getters["auth/currentUser"]?.email
     },
 
   },
@@ -392,12 +393,24 @@ export default {
         }
       });
 
+      this.Engineer = [ ...new Set(Orders.map(order => this.Users.find(user => user.user_name === order.engineer)?.display_name)) ] // .filter(Boolean)
+      .map((name, i) => {
+        return {
+          id: i,
+          name,
+          username: this.Users.find(user => user.display_name === name)?.user_name,
+          disabled: this.userRole.includes("admin")
+            ? false
+            : this.Users.find(user => user.display_name === name)?.email !== this.email
+        }
+      });
+
     // console.log('Invoices.', this.Invoices)
     // console.log('Sales', this.Sales.filter(item => item.currency === 'USD'))
 
 
 
-    /*******  Наполнение данными и основное форматирование всех столбцов таблицы  *********/
+  /*******  Наполнение данными и основное форматирование всех столбцов таблицы  *********/
 
     const commonData = filteredSales.map(item => {
       const invoice = this.Invoices.find(invoice => invoice.num === item.invoiceNum);
@@ -409,25 +422,29 @@ export default {
       const is_manual = ManualSales.find(sale => sale.rlz_1c.trim() === item?.sfnum.trim());
 
 
-      /* Забираем данные ручных правок менеджеров и %, если они есть в локальной таблице */
+      /* Забираем данные ручных правок менеджеров
+          и %, если они есть в локальной таблице */
       const om_manual = is_manual?.om;
       const sm_manual = is_manual?.sm;
+      const engineer_manual = is_manual?.engineer;
+      const lead_engineer_manual = is_manual?.lead_engineer;
       const manual_project = this.Projects.find(item => item.id === is_manual?.project);
       const om_percent_manual = is_manual?.om_percent;
       const sm_percent_manual = is_manual?.sm_percent;
       const profit_manual = is_manual?.profit;
 
 
-      if (item.sfnum.includes('09062521')) {
+      /* if (item.sfnum.includes('09062521')) {
         console.log('item', item)
          console.log(client?.MANAGER || Orders.find(om => om.Invoice === invoice?.docid)?.om)
          console.log(client)
          console.log(invoice)
-       }
+       } */
 
       const om = client?.MANAGER || Orders.find(om => om.Invoice === invoice?.docid)?.om;
       const sm = client?.SM_SERV || Orders.find(om => om.Invoice === invoice?.docid)?.sm;
-
+      const engineer = Orders.find(eng => eng.Invoice === invoice?.docid)?.engineer;
+      const lead_engineer = Orders.find(eng => eng.Invoice === invoice?.docid)?.lead_engineer;
 
       const iKey = Orders.find(om => om.Invoice === invoice?.docid)?.iKey;
       const project = (manual_project?.name || invoice?.project);
@@ -439,13 +456,11 @@ export default {
 
       // this.getSumWithRate(item.sum, item.date, item.currency, (item.currency === 'USD' ? dollar_rate.ValCurs.Record : euro_rate.ValCurs.Record))
 
-      const om_sum = ((item.sum * item.currencyRate) - ((item.sum * item.currencyRate) * 20 / 120))
+      const om_sum = ((item.sum * item.currencyRate) - ((item.sum * item.currencyRate) * 22 / 122))
         * ((profit_manual ? (profit_manual / 100) : null) || profit)
         * ((om_percent_manual || this.calcOmPercent((item.sum * profit), project, (sm_manual || sm))) / 100)
 
-      //this.getSumWithRate(item.sum, item.date, item.currency, (item.currency === 'USD' ? dollar_rate.ValCurs.Record : euro_rate.ValCurs.Record))
-
-      const sm_sum = ((item.sum * item.currencyRate) - ((item.sum * item.currencyRate) * 20 / 120))
+      const sm_sum = ((item.sum * item.currencyRate) - ((item.sum * item.currencyRate) * 22 / 122))
         * ((profit_manual ? (profit_manual / 100) : null) || profit)
         * ((sm_percent_manual || this.calcSmPercent(project, (om_manual || om))) / 100)
 
@@ -464,9 +479,12 @@ export default {
           sm_sum: sm_sum,
           om: this.getDisplayName(om_manual || om),
           sm: this.getDisplayName(sm_manual || sm),
+          lead_engineer: this.getDisplayName(lead_engineer_manual || lead_engineer),
+          engineer: this.getDisplayName(engineer_manual || engineer),
           is_manual: !!is_manual,
           iKey: iKey,
-          sum: (item.sum * item.currencyRate)
+          sum: (item.sum * item.currencyRate),
+          profit_rub: ((item.sum * item.currencyRate) * profit) - (((item.sum * item.currencyRate) * profit) * 22 / 122)
         }
     })
     
@@ -484,6 +502,8 @@ export default {
       { name: 'project' },
       { name: 'om' },
       { name: 'sm' },
+      { name: 'lead_engineer' },
+      { name: 'engineer' },
       { name: 'contractorName' },
     ]
     
@@ -559,10 +579,6 @@ export default {
       this.filteredTableData = this.tableData.sort((a, b) => setRemoteCustomSort(a, b, prop, order))
     },
 
-    /* updateData(data) {
-      this.filteredTableData = data || this.tableData
-    }, */
-
     updateData() {
       this.$worker.run(filterHandler , [JSON.stringify(this.filters), JSON.stringify(this.tableData), JSON.stringify(this.formatters)])
         .then(res => {
@@ -580,7 +596,6 @@ export default {
     resetFilters() {
       this.filters = {};
       this.filteredTableData = this.tableData;
-      //this.updateData()
     },
 
     addItem() {
@@ -594,6 +609,7 @@ export default {
       this.setSelectOptionsForEdit([
         { name: 'om', value: this.OM },
         { name: 'sm', value: this.SM },
+        { name: 'engineer', value: this.Engineer },
         { name: 'project', value: this.Projects }
       ]);
 
@@ -692,6 +708,20 @@ export default {
             .finally(() => this.loading = false)
           return
         }
+        case column === 'engineer': {
+          setEngineer({ rlz_1c: row.sfnum, engineer: value?.username, date: (new Date()).toISOString(), email: this.email })
+            .then(res => {
+              console.log('manual Engineer', res)
+              this.$notify({ type: "success", message: "Инженер успешно обновлен" });
+              row.sm = value;
+            })
+            .catch(err => {
+              console.log(err.message)
+              this.$notify({ type: "error", message: "Ошибка при обновлении СМ" })
+            })
+            .finally(() => this.loading = false)
+          return
+        }
       }
     },
 
@@ -707,6 +737,7 @@ export default {
         project: typeof item.project === 'string' ? this.Projects.find(project => project.name === item.project) : item.project,
         om: this.Users.find(user => user.display_name === item.om)?.user_name,
         sm: this.Users.find(user => user.display_name === item.sm)?.user_name,
+        engineer: this.Users.find(user => user.display_name === item.engineer)?.user_name,
         om_percent: +item.om_percent,
         sm_percent: +item.sm_percent,
         om_sum: +item.om_sum,
@@ -729,6 +760,7 @@ export default {
       row.project = typeof item.project === 'string' ? item.project : item.project.name;
       row.om = item.om;
       row.sm = item.sm;
+      row.engineer = item.engineer;
       row.om_percent = item.om_percent,
       row.sm_percent = item.sm_percent,
       row.om_sum = item.om_sum,
@@ -778,9 +810,11 @@ export default {
       const { columns } = params
       const props = [
         { name: 'sum' },
+        { name: 'profit_rub' },
         { name: 'pay', value: 'paymentSum' },
         { name: 'om_sum' },
-        { name: 'sm_sum' }
+        { name: 'sm_sum' },
+        { name: 'costPrice' }
       ]
       return getSummariesRow(columns, this.filteredTableData, props)
     },
@@ -845,10 +879,6 @@ export default {
         return cellValue ? new Date(cellValue).toLocaleDateString('ru') : null;
       }
 
-      if (column.property === 'sale_sum' || column.property === 'sum') {
-        return cellValue ? cellValue.toLocaleString('ru') : null;
-      }
-
       if (column.property === 'rate') {
         return row['currency'] === 'USD' ? cellValue : null;
       }
@@ -857,7 +887,7 @@ export default {
         return cellValue ? cellValue + '%' : null;
       }
 
-      if (column.property === 'om_sum' || column.property === 'sm_sum') {
+      if (column.property === 'sale_sum' || column.property === 'sum' || column.property === 'om_sum' || column.property === 'sm_sum' || column.property === 'costPrice' || column.property === 'profit_rub') {
         return cellValue ? cellValue.toLocaleString('ru') : null;
       }
 
@@ -883,7 +913,6 @@ export default {
     },
 
     getDisplayName(data) {
-      // console.log(this.Users.find(user => user.user_name === data || user.email === data)?.display_name)
       return this.Users.find(user => user.user_name === data || user.email === data)?.display_name;
     },
 

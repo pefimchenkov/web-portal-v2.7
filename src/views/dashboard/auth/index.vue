@@ -42,7 +42,8 @@ import {
     getClosedAcceptance,
     getClosedDelivery,
     getClosedTemporaryUsed,
-    getClosedIssuance
+    getClosedIssuance,
+    getClosedNoms
   } from '@/api/statistics/remonts'
 
 import { getCurrentCreatedComments } from '@/api/statistics/comments'
@@ -72,6 +73,7 @@ export default {
       closedDelivery: [],
       closedTemporaryUsed: [],
       closedIssuance: [],
+      closedNoms: [],
 
       currentCreatedRemonts: null,
       currentCreatedComments: null,
@@ -108,6 +110,7 @@ export default {
         deliveryData: this.closedDelivery,
         temporaryUsedData: this.closedTemporaryUsed,
         issuanceData: this.closedIssuance,
+        nomsData: this.closedNoms,
         interval: this.interval
 
       }
@@ -127,6 +130,7 @@ export default {
     this.getClosedDelivery();
     this.getClosedTemporaryUsed();
     this.getClosedIssuance();
+    this.getClosedNoms();
 
     this.getCurrentCreatedRemonts();
     this.getCurrentCreatedComments();
@@ -166,32 +170,38 @@ export default {
 
     async getClosedPresales() {
       const res = await getClosedPresales()
-      console.log('closedPresales', res)
+      //console.log('closedPresales', res)
       this.closedPresales = res.map(i => i.Qty)
     },
 
     async getClosedAcceptance() {
       const res = await getClosedAcceptance()
-      console.log('closedAcceptance', res)
+      //console.log('closedAcceptance', res)
       this.closedAcceptance = res.map(i => i.Qty)
     },
 
     async getClosedDelivery() {
       const res = await getClosedDelivery()
-      console.log('closedDelivery', res)
+      //console.log('closedDelivery', res)
       this.closedDelivery = res.map(i => i.Qty)
     },
 
     async getClosedTemporaryUsed() {
       const res = await getClosedTemporaryUsed()
-      console.log('closedTemporaryUsed', res)
+      //console.log('closedTemporaryUsed', res)
       this.closedTemporaryUsed = res.map(i => i.Qty)
     },
 
     async getClosedIssuance() {
       const res = await getClosedIssuance()
-      console.log('closedIssuance', res)
+      //console.log('closedIssuance', res)
       this.closedIssuance = res.map(i => i.Qty)
+    },
+
+    async getClosedNoms() {
+      const res = await getClosedNoms()
+      //console.log('closedNoms', res)
+      this.closedNoms = res.map(i => i.Qty)
     },
 
     /* ********************************* */

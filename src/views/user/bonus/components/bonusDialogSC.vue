@@ -263,7 +263,7 @@ export default {
     ...mapState({
       BonusProfitSC: state => state.user.BonusProfitSC
     }),
-    ...mapGetters(['currentUser', 'jira_users']),
+    ...mapGetters(['auth/scurrentUser', 'jira_users']),
     computedHeaders() {
       return this.headers.filter(header => header.selected)
     },

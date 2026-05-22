@@ -114,7 +114,7 @@ export default {
       "clients",
       "legpers",
       "domains",
-      "currentUser",
+      "auth/currentUser",
     ]),
 
     ...mapState({ crmData: (state) => state.jira.CrmData }),

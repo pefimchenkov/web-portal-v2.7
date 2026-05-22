@@ -10,7 +10,7 @@
         <span slot="label"><i class="el-icon-money" /> Текущие</span>
         <FinanceList />
       </el-tab-pane>
-      <el-tab-pane v-if="!roles.find(role => role === 'limitedFinancier')" name="history" @click.stop="getData">
+      <el-tab-pane v-if="!isLimitedFinancier" name="history" @click.stop="getData">
         <v-row v-if="loading" :key="loading" style="height: 90vh">
           <v-col v-loading="loading" />
         </v-row>
@@ -18,7 +18,7 @@
         <FinanceHistory
         />
       </el-tab-pane>
-      <el-tab-pane v-if="!roles.find(role => role === 'limitedFinancier')" label="Импорт" name="excel">
+      <el-tab-pane v-if="!isLimitedFinancier" label="Импорт" name="excel">
         <span slot="label"><i class="el-icon-upload" /> Импорт</span>
         <UploadExcel
         />
@@ -51,8 +51,16 @@ export default {
   },
   computed: {
 
+    currentUser() {
+      return this.$store.getters["auth/currentUser"]
+    },
+
     roles() {
-      return this.$store.getters.userRole
+      return this.currentUser?.roles
+    },
+
+    isLimitedFinancier() {
+      return this.roles.find(role => role === 'limitedFinancier')
     }
 
   },

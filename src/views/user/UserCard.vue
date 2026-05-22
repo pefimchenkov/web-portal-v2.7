@@ -296,10 +296,10 @@ export default {
       info: state => state.user.info
     }),
     UserRole() {
-      return this.$store.getters.userRole || 'нет данных'
+      return this.$store.getters["auth/currentUser"].roles || 'нет данных'
     },
     currentUser() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     },
     Name() {
       return this.info.firstname + ' ' + this.info.lastname || 'нет данных'
@@ -312,7 +312,7 @@ export default {
     },
     Photo() {
       return this.currentUser
-        ? this.currentUser.providerData[0].photoURL
+        ? this.currentUser.providerData[0]?.photoURL
         : null
     },
     Email() {
@@ -353,7 +353,7 @@ export default {
     await GetConfig.getMyFilters()
       .then(filters => {
         if (filters) {
-          Object.entries(filters).forEach((filter, index) => {
+          Object.entries(filters).forEach((filter) => {
             const obj = []
             Object.entries(filter[1]).forEach(entry => {
               obj.push({
@@ -453,7 +453,7 @@ export default {
         return
       }
       const reader = new FileReader()
-      reader.onload = e => {
+      reader.onload = () => {
         this.imageSRC = reader.result
       }
       reader.readAsDataURL(file)
@@ -476,7 +476,7 @@ export default {
           })
         await user
           .updateProfile({
-            photoURL: imageSRC
+            photoURL: imageSRC || ''
           })
           .then(() => {
             this.$store.dispatch('setData', 'Фото успешно сохранено!')
@@ -494,7 +494,7 @@ export default {
 
     async getSharedFiltersName(item) {
       await pause(1000)
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         resolve(this.SharedFilters)
       })
         .then(json => {
@@ -504,7 +504,7 @@ export default {
     },
     async getFiltersName(item) {
       await pause(1000)
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         resolve(this.Filters)
       })
         .then(json => {
@@ -581,7 +581,7 @@ export default {
         }
       })
       function parentName(arr) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           arr.forEach(filter => {
             if (
               !_.isEmpty(

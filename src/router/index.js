@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import store from '@/store'
+import getPageTitle from '@/utils/get-page-title'
 
 Vue.use(Router)
 
@@ -12,6 +14,10 @@ import Layout from '@/layout'
  * all roles can be accessed
  */
 export const constantRoutes = [
+  {
+    path: '/',
+    redirect: '/dashboard',
+  },
   {
     path: '/redirect',
     component: Layout,
@@ -27,15 +33,15 @@ export const constantRoutes = [
     ]
   },
   {
-    path: '/',
+    path: '/dashboard',
     component: Layout,
     children: [
       {
-        path: '/',
+        path: '/dashboard',
         component: () => import('@/views/dashboard'),
         name: 'Dashboard',
         meta: {
-          rule: 'Public',
+          rule: 'User',
           affix: true,
           title: 'Рабочий стол',
           icon: 'dashboard'
@@ -45,20 +51,20 @@ export const constantRoutes = [
   },
   {
     path: '/login',
-    name: 'login',
+    name: 'Login',
     component: () => import('@/components/auth/Login'),
     hidden: true,
     meta: {
-      rule: 'Public'
+      rule: 'Public',
     }
   },
   {
-    path: '/registration',
-    name: 'reg',
+    path: '/register',
+    name: 'Register',
     hidden: true,
     component: () => import('@/components/auth/Registration'),
     meta: {
-      rule: 'Public'
+      rule: 'Public',
     }
   },
   {
@@ -68,7 +74,6 @@ export const constantRoutes = [
     children: [
       {
         path: '',
-        /* component: () => import('@/views/user/UserProfile'), */
         component: () => import('@/views/profile'),
         name: 'Profile',
         meta: {
@@ -77,6 +82,22 @@ export const constantRoutes = [
           roles: ['user'],
           icon: 'user',
           noCache: true
+        }
+      }
+    ]
+  },
+
+  {
+    path: '/forbidden',
+    component: Layout,
+    name: "Forbidden",
+    children: [
+      {
+        path: '/forbidden',
+        component: () => import('@/views/error-page/404'),
+        hidden: true,
+        meta: {
+          rule: '*'
         }
       }
     ]
@@ -105,10 +126,11 @@ export const asyncRoutes = [
       {
         path: 'list',
         component: () => import('@/views/b2b/list_setup.vue'),
-        name: 'b2b-list',
+        name: '/b2b/list',
         meta: {
           title: 'Запрос данных',
-          rule: 'Manager'
+          rule: 'Manager',
+          roles: ['manager', 'serviceManager']
         }
       }
     ]
@@ -130,7 +152,7 @@ export const asyncRoutes = [
       {
         path: 'list',
         component: () => import('@/views/zip/list'),
-        name: 'list',
+        name: '/zip/list',
         meta: {
           title: 'Список ЗИП',
           rule: 'Engineer'
@@ -184,19 +206,19 @@ export const asyncRoutes = [
     alwaysShow: true,
     name: 'models',
     meta: {
+      rule: 'Engineer',
       title: 'Модели',
       icon: 'model',
-      rule: 'Engineer',
-      roles: ['engineer', 'leadEngineer']
+      roles: ['engineer', 'leadEngineer'],
     },
     children: [
       {
         path: 'list',
         component: () => import('@/views/models/list.vue'),
-        name: 'models_list',
+        name: '/models/list',
         meta: {
+          rule: 'Engineer',
           title: 'Список моделей',
-          rule: 'Engineer'
         }
       },
       {
@@ -214,19 +236,19 @@ export const asyncRoutes = [
   {
     path: '/market',
     component: Layout,
-    redirect: '/market/list-setup.vue',
+    redirect: '/market/list.vue',
     alwaysShow: true,
     name: 'market',
     meta: {
       title: 'Маркет',
       icon: 'market',
-      rule: 'User',
-      roles: ['user', 'manager', 'serviceManager', 'engineer', 'leadEngineer']
+      rule: 'Manager',
+      roles: ['manager', 'serviceManager', 'engineer', 'leadEngineer']
     },
     children: [
       {
         path: 'list',
-        component: () => import('@/views/market/list-setup.vue'),
+        component: () => import('@/views/market/list.vue'),
         name: 'market_list',
         meta: {
           title: 'Список Маркет',
@@ -238,8 +260,19 @@ export const asyncRoutes = [
         component: () => import('@/views/market/orders/list.vue'),
         name: 'orders_list',
         meta: {
-          title: 'Список заказов',
-          rule: 'Admin'
+          title: 'Реестр заказов',
+          rule: 'Manager',
+          roles: ['manager', 'serviceManager', 'financier', 'engineer', 'leadEngineer']
+        }
+      },
+      {
+        path: '/purchases/list',
+        component: () => import('@/views/market/purchases/list.vue'),
+        name: 'purchases_list',
+        meta: {
+          title: 'Реестр закупок',
+          rule: 'Manager',
+          roles: ['manager', 'serviceManager', 'financier', 'engineer', 'leadEngineer']
         }
       },
       {
@@ -437,7 +470,7 @@ export const asyncRoutes = [
       title: 'Справочники',
       icon: 'dictionary',
       rule: 'Engineer',
-      roles: ['engineer', 'nom', 'user', 'leadEngineer', 'superFinancier', 'limitedFinancier']
+      roles: ['engineer', 'nom', 'leadEngineer', 'superFinancier', 'limitedFinancier']
     },
     children: [
       {
@@ -464,7 +497,7 @@ export const asyncRoutes = [
         component: () => import('@/views/atlas-pro/index.vue'),
         meta: {
           title: 'Атлас Про',
-          rule: 'User'
+          rule: 'Engineer'
         }
       },
       {
@@ -606,22 +639,61 @@ export const asyncRoutes = [
         }
       }
     ]
-  }
+  },
 
 ]
+
+
+
 
 const createRouter = () => new Router({
   mode: 'history', // require service support
   scrollBehavior: () => ({ y: 0 }),
-  routes: constantRoutes
+  routes: [...constantRoutes, ...asyncRoutes ]
 })
 
-const router = createRouter()
 
-// Detail see: https://github.com/vuejs/vue-router/issues/1234#issuecomment-357941465
 export function resetRouter() {
   const newRouter = createRouter()
   router.matcher = newRouter.matcher // reset router
 }
+
+const router = createRouter()
+
+
+// ───────────────── Navigation Guard ────────────────────────────────────────
+router.beforeEach(async (to, from, next) => {
+  
+  const isAuthenticated = await store.getters['auth/isAuthenticated'];
+  const userRoles = await store.getters['auth/currentUser']?.roles;
+  document.title = getPageTitle(to.meta.title)
+
+  //console.log('userRoles', userRoles)
+
+
+
+  if (!isAuthenticated && to.path === '/register') {
+    return next() // query: { redirect: from.fullPath }
+  }
+
+
+  if (!isAuthenticated && to.path !== '/login') {
+    return next({ name: 'Login' }) // query: { redirect: from.fullPath }
+  }
+
+  if (isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+    return next({ name: 'Dashboard' }) // query: { redirect: from.fullPath }
+  }
+
+  if (userRoles?.length) {
+    await store.dispatch('permission/generateRoutes', userRoles)
+  }
+
+  next()
+
+});
+
+
+
 
 export default router

@@ -236,7 +236,7 @@ export default {
 
   computed: {
     selectedHeaders() { return this.tableHeaders.filter(header => header.selected) },
-    user() { return this.$store.getters.currentUser },
+    user() { return this.$store.getters["auth/currentUser"] },
 
     ...mapState({
       Models: state => state.models.models,

@@ -6,6 +6,8 @@ import 'nprogress/nprogress.css' // progress bar style
 import { getToken } from '@/utils/auth.js' // get token from cookie
 import getPageTitle from '@/utils/get-page-title'
 
+
+
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
 const whiteList = ['/login'] // no redirect whitelist
@@ -16,6 +18,8 @@ router.beforeEach(async(to, from, next) => {
   document.title = getPageTitle(to.meta.title)
   const hasToken = getToken()
 
+  
+
   if (hasToken) {
     if (to.path === '/login') {
       next({ path: from.fullPath })
@@ -25,9 +29,16 @@ router.beforeEach(async(to, from, next) => {
         try {
           const roles = await store.dispatch('getUserRole')
           const accessRoutes = await store.dispatch('permission/generateRoutes', roles)
-          router.addRoutes(accessRoutes)
+          
+
+          accessRoutes.forEach(route => {
+            router.addRoute(route)
+          })
+
+          // router.addRoutes(accessRoutes)
           // next({ ...to, replace: true })
           router.push({ ...to, replace: true })
+          
         } catch (error) {
             await store.dispatch('LogoutUser')
             Message.error(error || 'Ошибка')

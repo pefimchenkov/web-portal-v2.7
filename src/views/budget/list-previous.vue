@@ -501,7 +501,7 @@ export default {
     },
 
     user() {
-      return this.$store.getters.currentUser
+      return this.$store.getters["auth/currentUser"]
     },
 
     project1C() {
@@ -618,7 +618,7 @@ export default {
       }
     },
 
-    setColor(item) {
+    setColor() {
       return 'grey--text lighten-3'
     },
 

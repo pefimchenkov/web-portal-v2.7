@@ -1,5 +1,5 @@
 <template>
-  <el-card style="margin-bottom:20px;">
+  <el-card style="margin-bottom:15px;">
     <div slot="header" class="clearfix">
       <span>Обо мне</span>
     </div>
@@ -19,7 +19,6 @@
       <div class="box-center">
         <div class="user-name text-center">{{ currentJiraUser.display_name }}</div>
         <div class="user-role text-center text-muted">{{ user.role }}</div>
-        <div class="user-role text-center text-muted">{{ currentJiraUser.jira_groups }}</div>
       </div>
     </div>
 
@@ -32,16 +31,6 @@
           </div>
         </div>
       </div>
-
-      <!-- <div class="user-skills user-bio-section">
-        <div class="user-bio-section-header"><svg-icon icon-class="skill" /><span>Навыки</span></div>
-        <div class="user-bio-section-body">
-          <div class="progress-item">
-            <span>Vue</span>
-            <el-progress :percentage="70" />
-          </div>
-        </div>
-      </div> -->
     </div>
   </el-card>
 </template>
@@ -87,7 +76,7 @@ export default {
   computed: {
 
     jiraAvatar() {
-      return `http://support.atlas-pro24.local/secure/useravatar?ownerId=${this.currentJiraUser.user_name}`
+      return `http://support.atlas-pro24.local/secure/useravatar?ownerId=${this.currentJiraUser?.user_name}`
     }
 
   },
@@ -147,7 +136,7 @@ export default {
 
   .user-bio-section {
     font-size: 14px;
-    padding: 15px 0;
+    padding: 10px 0;
 
     .user-bio-section-header {
       border-bottom: 1px solid #dfe6ec;

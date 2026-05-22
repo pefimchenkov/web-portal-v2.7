@@ -291,6 +291,55 @@ export default {
       })
     },
 
+    autoLoginUser({ commit }, payload) {
+      commit('setUser', new User(payload.uid))
+    },
+
+    reauthUser(currentPassword) {
+      return new Promise((resolve, reject) => {
+        const user = fb.auth().currentUser
+        const cred = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword)
+        user.reauthenticateWithCredential(cred)
+          .then(() => {
+            resolve(true)
+          })
+          .catch(error => {
+            reject(error)
+          })
+      })
+    },
+
+    setUserPassword(password) {
+      const user = firebase.auth().currentUser
+      user.updatePassword(password)
+        .then(() => {
+          Message({ message: 'Пароль успешно изменён!', type: 'success', duration: 4 * 1000 })
+        })
+        .catch(error => {
+          Message({ message: error.message, type: 'error', duration: 4 * 1000 })
+        })
+    },
+
+
+
+    LogoutUser({ commit }) {
+      fb.auth().signOut()
+      removeToken()
+      commit('setUser', null)
+      commit('setLoading', false)
+    },
+
+
+
+
+    /* ******************************************************************* */
+
+
+
+    
+
+
+
     getBonusSale({ commit }, email) {
       return new Promise((resolve, reject) => {
         getBonusSale()
@@ -485,42 +534,12 @@ export default {
       }
     },
 
-    autoLoginUser({ commit }, payload) {
-      commit('setUser', new User(payload.uid))
-    },
-
-    reauthUser(currentPassword) {
-      return new Promise((resolve, reject) => {
-        const user = fb.auth().currentUser
-        const cred = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword)
-        user.reauthenticateWithCredential(cred)
-          .then(() => {
-            resolve(true)
-          })
-          .catch(error => {
-            reject(error)
-          })
-      })
-    },
-
-    setUserPassword(password) {
-      const user = firebase.auth().currentUser
-      user.updatePassword(password)
-        .then(() => {
-          Message({ message: 'Пароль успешно изменён!', type: 'success', duration: 4 * 1000 })
-        })
-        .catch(error => {
-          Message({ message: error.message, type: 'error', duration: 4 * 1000 })
-        })
-    },
-
-    LogoutUser({ commit }) {
-      fb.auth().signOut()
-      removeToken()
-      commit('setUser', null)
-      commit('setLoading', false)
-    }
+    
   },
+
+
+
+
   getters: {
     token(state) {
       return state.token
@@ -529,7 +548,7 @@ export default {
       return state.user
     },
     avatar(state) {
-      return state.currentUser.photoURL || 'account_circle'
+      return state.currentUser?.photoURL || 'account_circle'
     },
     userRole(state) {
       return state.userRole

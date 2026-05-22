@@ -33,9 +33,9 @@
             <el-col :span="12">
               <el-form-item label="Инициирующий отдел" prop="initiating">
                 <el-input
-                      :value="form.initiating.name"
-                      disabled
-                    />
+                  :value="form.initiating.name"
+                  disabled
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -59,6 +59,66 @@
               </el-col>
           </el-row>
 
+          <el-row :gutter="10">
+            <el-col :span="12">
+              <el-form-item
+                label="Подраздление"
+                prop="subdivision">
+                  <el-select v-model="form.subdivision" value-key="value">
+                  <el-option
+                    v-for="item in subdivisions"
+                    :key="item.value"
+                    :label="item.name"
+                    :value="item">
+                  </el-option>
+                </el-select>
+                </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item
+                label="Клиент"
+                prop="organization">
+                <el-select
+                  v-model="form.organization"
+                  value-key="ID"
+                  filterable
+                  clearable
+                >
+                  <el-option
+                    v-for="item in organizations"
+                    :key="item.ID"
+                    :label="item.NAME"
+                    :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+          </el-row>
+
+          <el-row>
+            <el-form-item
+              label="Задачи JIRA"
+              prop="task">
+                <el-select
+                  v-model="form.task"
+                  value-key="jkey"
+                  filterable
+                  multiple
+                  clearable
+                  :disabled="!tasks.length"
+                >
+                  <el-option
+                    v-for="item in tasks"
+                    :key="item.jkey"
+                    :label="formatTask(item)"
+                    :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+          </el-row>
+
+
           <el-row>
             <el-col :span="24">
                 <el-form-item label="Описание" prop="comment">
@@ -77,45 +137,45 @@
         </el-form>
 
         <el-table
-                    ref="orderDetails"
-                    :data="parts"
-                    :default-sort="{prop: 'market_id'}"
-                    show-summary
-                    :summary-method="getSummaries"
-                    empty-text="нет данных"
-                  >
-                    <el-table-column
-                      label="Маркет ID"
-                      prop="market_id"
-                    />
-                    <el-table-column
-                      label="Название"
-                      prop="type"
-                    />
-                    <el-table-column
-                      label="Состояние"
-                      prop="cond"
-                    />
-                    <el-table-column
-                      label="Артикул 1С"
-                      prop="ART_1C"
-                    />
-                    <el-table-column
-                      label="Количество"
-                      prop="qty"
-                    />
-                    <el-table-column
-                      label="Цена (₽)"
-                      prop="price"
-                      width="200"
-                    />
-                    <el-table-column
-                      label="Итого (₽)"
-                      prop="summ"
-                    />
-                   
+          ref="orderDetails"
+          :data="parts"
+          :default-sort="{prop: 'market_id'}"
+          show-summary
+          :summary-method="getSummaries"
+          empty-text="нет данных"
+        >
+            <el-table-column
+              label="Маркет ID"
+              prop="market_id"
+            />
+            <el-table-column
+              label="Название"
+              prop="type"
+            />
+            <el-table-column
+              label="Состояние"
+              prop="cond"
+            />
+            <el-table-column
+              label="Артикул 1С"
+              prop="ART_1C"
+            />
+            <el-table-column
+              label="Количество"
+              prop="qty"
+            />
+            <el-table-column
+              label="Цена (₽)"
+              prop="price"
+              width="200"
+            />
+            <el-table-column
+              label="Итого (₽)"
+              prop="summ"
+            />
+            
 
-                  </el-table>
+          </el-table>
 
 
 
@@ -129,7 +189,7 @@
 
 <script>
 
-import { createPurchase } from '@/api/market/orders'
+import { createPurchase, getClientTasks } from '@/api/market/orders'
 
 export default {
 
@@ -157,7 +217,6 @@ export default {
     return {
 
       dialogFormVisible: false,
-      loading: false,
 
       form: {
         theme: '',
@@ -165,12 +224,22 @@ export default {
           name: 'Атлас-Про',
           value: 20702,
         },
+        subdivision: {},
+        organization: {},
+        task: {},
         comment: '',
         intention: 'Автопополнение склада'
       },
 
-      formLabelWidth: '230px',
+      organizations: [],
+      tasks: [],
+      subdivisions: [
+        { name: "Сервисный центр", value: 23802 },
+        { name: "Отдел продаж", value: 23803 }
+      ],
 
+      marketDetails: [],
+      formLabelWidth: '230px',
       rules: {
         comment: [{ required: true, message: 'Обязательно!', trigger: 'change' }],
       }
@@ -178,26 +247,33 @@ export default {
   },
 
   computed: {
-
     currentUser() {
-      return (this.$store.getters.currentUser && this.$store.getters.jira_users) ? this.jiraUsers.find(u => u.email === this.$store.getters.currentUser.email) : null
+      return this.$store.getters["auth/currentUser"]
+    },
+
+    currentJiraUser() {
+      return this.jiraUsers.find(user => user.email === this.currentUser?.email);
     },
 
     displayName() {
-      return (this.$store.getters.currentUser && this.$store.getters.jira_users) ? this.jiraUsers.find(u => u.email === this.$store.getters.currentUser.email).display_name : null
+      return this.jiraUsers.find(user => user.email === this.currentUser?.email)?.display_name;
     },
 
     jiraUsers() {
-      return this.$store.getters.jira_users || []
+      return this.$store.getters["jira/users"] || [];
     },
 
     clients() {
-      return this.$store.getters.clients || []
+      return this.$store.getters.clients || [];
     },
 
     theme() {
-      return `Автоматическая закупка по заказу № ${this.id}`
+      return `Автоматическая закупка по заказу № ${this.id}`;
     },
+
+    market() {
+      return this.$store.getters['market_new/market'];
+    }
 
 
   },
@@ -205,10 +281,44 @@ export default {
   watch: {
 
     async show(val) {
+
+      if (val)
+        this.$emit('loading', true);
+
+      await this.$store.dispatch('clients/getClients');
+
+      if (!this.jiraUsers.length)
+        await this.$store.dispatch('jira/users');
+
       this.dialogFormVisible = val
       this.form.comment = this.comment
       this.form.theme = this.theme
-      await this.$store.dispatch('clients/getClients')
+
+      const ids = this.parts.map(i => i.market_id);
+      this.marketDetails = this.market.filter(i => ids.includes(i.marketid))
+      this.organizations = [ { ID: 0, NAME: 'Отсутствует клиент' }, ...this.clients ]
+
+      this.$emit('loading', false)
+    },
+
+
+    
+    "form.organization": {
+      deep: true,
+      handler(org) {
+        
+        this.form.task = null;
+
+        if (org) {
+          getClientTasks({ id: org.ID })
+            .then(res => {
+              console.log(res)
+              this.tasks = [ ...res ]
+            })
+        } else {
+          this.tasks = []
+        }
+      }
     }
 
   },
@@ -230,13 +340,18 @@ export default {
       this.$refs[formName].validate((valid) => {
         if (valid) {
 
-          console.log(this.form)
-          createPurchase({ form: this.form, id: this.id, user: this.currentUser, parts: this.parts })
-            .then(res => {
-              this.close()
-              this.$message({ type: 'success', message: res })
-              this.$emit('update')
-            })
+          createPurchase({
+            form: this.form,
+            id: this.id,
+            user: this.currentJiraUser,
+            parts: this.parts,
+            marketDetails: this.marketDetails
+          })
+          .then(res => {
+            this.close()
+            this.$notify({ type: 'success', message: res })
+            this.$emit('update')
+          })
         } else {
           console.log('Ошибка отправки формы!')
           return false
@@ -247,6 +362,10 @@ export default {
 
     resetForm(formName) {
       this.$refs[formName].resetFields()
+    },
+
+    formatTask(value) {
+      return `${value.jkey} (${value.party_name})`
     },
 
 

@@ -1,14 +1,16 @@
-import request from '@/utils/request'
+//import request from '@/utils/request'
+
+import api from '@/services/api';
 
 export function getZip(params) {
-  return request({
+  return api({
     url: '/zip',
     method: 'get',
     params
   })
 }
 export function addOne(data) {
-  return request({
+  return api({
     url: '/zip/add',
     method: 'post',
     data
@@ -16,7 +18,7 @@ export function addOne(data) {
 }
 
 export function updateOne(data) {
-  return request({
+  return api({
     url: '/zip/update',
     method: 'post',
     data
@@ -24,7 +26,7 @@ export function updateOne(data) {
 }
 
 export function deleteOne(data) {
-  return request({
+  return api({
     url: '/zip/delete',
     method: 'post',
     data
@@ -32,7 +34,7 @@ export function deleteOne(data) {
 }
 
 export function uploadData(url, data) {
-  return request({
+  return api({
     url: url,
     method: 'post',
     data,
@@ -42,7 +44,7 @@ export function uploadData(url, data) {
   })
 }
 export function excelToDB(url, data) {
-  return request({
+  return api({
     url: url,
     method: 'post',
     data

@@ -7,7 +7,7 @@
     filterable
     multiple
     collapse-tags
-    placeholder="мульти-список"
+    placeholder="мультивыбор"
     @change="select"
   >
     <div style="display: flex; justify-content: center; background: #e7e7e7;">

@@ -4,7 +4,7 @@
     <el-dropdown-menu slot="dropdown" style="padding: 5px !important">
 
       <el-button size="small" type="warning" plain icon="el-icon-view" @click="showAllColumn">Выбрать все</el-button>
-      <el-button size="small" type="success" plain icon="el-icon-finished" @click="saveColumnFB">Сохранить</el-button>
+      <el-button size="small" type="success" plain icon="el-icon-finished" @click="saveColumn">Сохранить</el-button>
 
       <el-dropdown-item
         v-for="(header, i) in headers"
@@ -50,8 +50,14 @@ export default {
   methods: {
 
     async loadColumns() {
-      const columns = await this.$store.dispatch('app/getTableColumns', this.name)
-      if (!columns) return this.$emit('returnEmptyColumns', { type: 'warning', message: 'Конфигурация колонок отсутствует в базе данных, либо не выбрано ни одной!' })
+      const { config } = await this.$store.getters['auth/currentUser']
+      const columns = config.table_columns[this.name]
+
+
+      if (!columns) {
+        return this.$notify({ type: 'warning', message: 'Конфигурация колонок отсутствует в базе данных, либо не выбрано ни одной!' })
+        // return this.$emit('returnEmptyColumns', { type: 'warning', message: 'Конфигурация колонок отсутствует в базе данных, либо не выбрано ни одной!' })
+      }
 
       this.headers.forEach(header => {
         if (!header.visible) return
@@ -69,7 +75,8 @@ export default {
       })
     },
 
-    saveColumnFB() {
+    saveColumn() {
+      const { email } = this.$store.getters['auth/currentUser']
       const columns = {};
 
       this.headers.forEach(header => {
@@ -84,14 +91,12 @@ export default {
       console.log({ columns, name: this.name })
 
       this.$store
-        .dispatch('app/setTableColumns', { columns, name: this.name })
-        .then(res => {
-          console.log('response', res)
-
-          this.$notify({ type: 'success', message: res })
+        .dispatch('app/setTableColumns', { email, columns, name: this.name })
+        .then(() => {
+          this.$notify({ type: 'success', message: 'Настройки успешно сохранены.' })
           this.visible = true
         })
-        .catch(e => this.$notify({ type: 'error', message: e }))
+        .catch(err => this.$notify({ type: 'error', message: err.message }))
     }
   }
 }
