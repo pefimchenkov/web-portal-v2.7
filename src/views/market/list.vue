@@ -227,7 +227,7 @@
         </template>
 
         <!-- Заголовок таблицы c фильтрами -->
-        <template slot="header" slot-scope="scope">
+        <template #header="scope">
           <div style="word-break: keep-all;">{{ column.text }}</div>
           <TableFilters
             v-if="state.tableData.length > 0"

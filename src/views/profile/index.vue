@@ -26,6 +26,11 @@
       </el-row>
     </div>
   </div>
+
+
+  
+
+
 </template>
 
 <script>
@@ -33,20 +38,20 @@ import { mapGetters } from 'vuex'
 // import UserCard from './components/UserCard'
 // import Activity from './components/Activity'
 
+
 export default {
   name: 'Profile',
   components: {
     Finance: () => import('./components/Finance.vue'),
     Account: () => import('./components/Account.vue'),
-    Admins: () => import('./admins/users/index.vue')
+    Admins: () => import('./admins/users/index.vue'),
   },
 
   data() {
     return {
 
       user: {},
-      activeTab: 'account'
-
+      activeTab: 'account',
     }
   },
 

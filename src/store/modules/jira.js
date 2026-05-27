@@ -36,7 +36,6 @@ const actions = {
       getJiraUsers()
         .then(users => {
           commit('USERS', users)
-          console.log('dwdawdwdaw', users)
           resolve(users)
         })
     })

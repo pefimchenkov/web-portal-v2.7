@@ -566,23 +566,29 @@ export default {
 
     itemsDetails(type, item) {
       const html = []
-      if (type === 'total') {
+      if (type === 'total' && this.DetailedSalary.length) {
         const details = this.DetailedSalary?.filter(obj => obj.USER === item.USER && obj.PERIOD === item.PERIOD && obj.YEAR === item.YEAR)
         html.push('<table style="border-collapse:separate; border-spacing: 3px;">')
+
         details.forEach(el => {
           html.push(`<tr style="${el.CASH === '-' ? 'color: yellow' : ''}"><td>${el.CASH === '-' ? el.CCASH : el.CASH}&nbsp;: </td><td>&nbsp;&nbsp;${el.Income}</td><td>&nbsp;
           ${ruFormatCurrency(el.IncomeTotal)}</td><td>&nbsp;&nbsp;(выплачено: ${ruFormatCurrency(el.CostTotal)})</td></tr>`)
         })
+
         html.push('</table>')
       }
-      if (type === 'cash') {
+
+      if (type === 'cash' && this.DetailedCash.length) {
         const details = this.DetailedCash?.filter(obj => obj.CASH_ID === item)
         html.push('<table style="border-collapse:separate; border-spacing: 3px;">')
+
         details.forEach(el => {
           html.push(('<tr><td>Долг: </td><td>&nbsp;&nbsp;</td><td>' + ruFormatCurrency(el.SUM) + '</td><td>&nbsp;&nbsp;</td><td>' + el.NAME + '</td></tr>'))
         })
+        
         html.push('</table>')
       }
+
       return html.length > 0
         ? html.join('<tr>')
         : 'нет данных'

@@ -6,6 +6,14 @@
       </v-toolbar-title>
       <v-divider class="mx-3" inset vertical />
 
+      <Basket
+        v-if="basket.length"
+        :show="state.showBasket"
+        @close="state.showBasket = false"
+        @updateFromBasket="updateFromBasket"
+        class="mr-3"
+      />
+
       <!-- Внешний фильтр (remote, from api) -->
 
       <!-- <OuterFilter
@@ -108,11 +116,13 @@
             :is="column.formatter"
             v-if="column.formatter"
             :row="row"
+            :actions="column.actions"
             :column="column.value"
             :url="state.jira_url"
             :jql="state.jira_jql"
             :jql_query="getJqlQuery(row)"
             :jql_query_remonts="row.Remonts"
+            @basket="putToBasket"
           />
           <div v-else>
             {{ row[column.value] }}
@@ -120,7 +130,7 @@
         </template>
 
         <!-- Заголовок таблицы -->
-        <template slot="header" slot-scope="scope">
+        <template #header="scope">
           <div style="word-break: keep-all">{{ column.text }}</div>
 
           <TableFilters
@@ -200,6 +210,7 @@ import TableOptions from "@/components/TableOptions/index.vue";
 import OuterFilter from "./components/outer_filter.vue";
 import Pagination from "@/components/Pagination";
 import ExportExcel from "@/components/ExportExcel";
+import Basket from './components/basket.vue'
 
 import { filterHandler } from "@/workers/filters.js";
 
@@ -235,6 +246,8 @@ const state = reactive({
     page: 1,
     limit: 25,
   },
+  showBasket: false,
+  isUpdateFromBasket: false,
 
   jira_url,
   jira_jql,
@@ -262,6 +275,8 @@ const payloadForMovements = {
   warehouse: ["444640d1-3adc-11ea-8264-001dd8b72066"],
 };
 
+const basket = computed(() => store.state.market.Basket)
+
 watch(
   () => state.filteredTableData,
   () => {
@@ -271,13 +286,13 @@ watch(
 );
 
 watch(() => state.tableData, async () => {
-    if (!state.filters['commonCurrentNeed'].length) {
+    if (!state.filters['commonCurrentNeed']?.length) {
       state.filters['commonCurrentNeed'] = [0, maxRangeCommonCurrentNeed()]
     }
-    if (!state.filters['commonToOrder'].length) {
+    if (!state.filters['commonToOrder']?.length) {
       state.filters['commonToOrder'] = [0, maxRangeCommonToOrder()]
     }
-    if (!state.filters['Total'].length) {
+    if (!state.filters['Total']?.length) {
       state.filters['Total'] = [0, maxRangeTotal()]
     }
 
@@ -544,6 +559,12 @@ function setFormattersForOptions() {
     ...createSelectOptionsFromTableData({ data: state.tableData, columns: state.formatters.filter(i => !i.prop) }),
   }
 
+}
+
+
+
+function putToBasket() {
+  state.showBasket = true
 }
 
 

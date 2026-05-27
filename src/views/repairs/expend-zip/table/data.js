@@ -2,6 +2,7 @@ import JiraLink from '@/components/Formatters/jira-link.vue'
 import Coloration from '@/components/Formatters/coloration.vue'
 import ColorationPlusJiraLink from '@/components/Formatters/coloration-plus-jiralink.vue'
 import RemontsJiraLink from '@/components/Formatters/remonts-jiralink.vue'
+import Actions from '@/components/Actions'
 
 export {
   tableName,
@@ -51,6 +52,10 @@ const periods = [
   }
 ]
 
+const actions = [
+  { name: 'basket', text: 'Положить в корзину', access: 'Engineer' }
+]
+
 const templateHeaders = [
   { text: 'ID элемента', value: 'Zip_ID', sortable: 'custom', width: 150 },
   { text: 'Название', value: 'Zip_Name', sortable: 'custom' },
@@ -76,5 +81,5 @@ const templateHeaders = [
   { text: 'Ожидание ремонта всего', value: 'commonCurrentNeed', sortable: 'custom', width: 150, formatter: ColorationPlusJiraLink },
   { text: 'Общая потребность', value: 'Total', sortable: 'custom', width: 150, },
   { text: 'Сумма потребности', value: 'SumPriceNeed', sortable: 'custom', },
-  { text: 'Действия', value: 'actions', fixed: 'right', /* formatter: Test */ }
+  { text: 'Действия', value: 'actions', fixed: 'right', formatter: Actions, actions }
 ]

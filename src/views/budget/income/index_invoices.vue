@@ -124,7 +124,7 @@
       >
 
         <!-- Заголовок таблицы -->
-        <template slot="header" slot-scope="scope">
+        <template #header="scope">
           <div style="word-break: keep-all;">{{ column.text }}</div>
 
           <TableFilters
@@ -466,7 +466,7 @@ export default {
           : this.setDolgOrange(saleSumWithRate, incomingPaymentsWithDebtOffset )
 
       
-      if (item.num.includes("0704254")) {
+      if (item.num.includes("27022610")) {
         console.log(item)
         console.log('pay_dollar', pay_dollar)
         console.log("saleSumWithRate", Number(saleSumWithRate))
@@ -513,7 +513,7 @@ export default {
             ? this.setDolgRed(saleSumWithRate, manualBill?.pay_sum, pay_date)
             : (Number(pay_dollar.toFixed(2)) - item.sum) === 0
               ? 0
-              : this.setDolgRed(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date),
+              : this.setDolgRed(saleSumWithRate, incomingPaymentsWithDebtOffset, pay_date, item),
           
 
           overpayment: manualBill?.pay_sum
@@ -872,7 +872,7 @@ export default {
 
 
 
-    setDolgRed(sales_sum, pays, pay_date) {
+    setDolgRed(sales_sum, pays, pay_date, invoice) {
       const pay_date_time = new Date(pay_date).getTime();
       const now_time = new Date().getTime();
 
@@ -884,6 +884,13 @@ export default {
 
 
       if (Math.sign(pay_date_time - now_time) === -1) {
+        if (
+          invoice?.contractorId === "ed05dd3b-0697-11ee-a2aa-ac1f6b67576f" || // Вимм-Билль-Данн
+          invoice?.contractorId ===  "f863d754-0b74-11ee-a2aa-ac1f6b67576f" || // ПепсиКо
+          invoice?.contractorId ===  "94807e3c-a9cf-11ec-a2a7-ac1f6b67576f" // Купишуз
+        ) { return 0 }
+
+
         return sales_sum
           ? Math.sign(result) === -1
             ? 0
